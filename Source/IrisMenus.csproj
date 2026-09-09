@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net48</TargetFramework>
+    <OutputType>Library</OutputType>
+    <RootNamespace>IrisMenus</RootNamespace>
+    <AssemblyName>IrisMenus</AssemblyName>
+    <LangVersion>latest</LangVersion>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <OutputPath>../1.6/Assemblies/</OutputPath>
+    <DebugType>none</DebugType>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Lib.Harmony.Ref" Version="2.4.1" PrivateAssets="all" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(RimWorldManagedDir)' == ''">
+    <PackageReference Include="Krafs.Rimworld.Ref" Version="1.6.4633" PrivateAssets="all" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(RimWorldManagedDir)' != ''">
+    <Reference Include="Assembly-CSharp">
+      <HintPath>$(RimWorldManagedDir)/Assembly-CSharp.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="$(RimWorldManagedDir)/UnityEngine*.dll">
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+</Project>

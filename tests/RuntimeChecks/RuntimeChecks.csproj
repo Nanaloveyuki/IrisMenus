@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../Source/MenuRegistry.cs" Link="Production/MenuRegistry.cs" />
+    <Compile Include="../../Source/MenuSession.cs" Link="Production/MenuSession.cs" />
+    <Compile Include="../../Source/MenuScrollView.cs" Link="Production/MenuScrollView.cs" />
+    <Compile Include="../../Source/MenuLayout.cs" Link="Production/MenuLayout.cs" />
+    <Compile Include="../../Source/FrostBackground.cs" Link="Production/FrostBackground.cs" />
+    <Compile Include="../../Source/IrisMenusMod.cs" Link="Production/IrisMenusMod.cs" />
+    <Compile Include="../../Source/SettingsEntryRouter.cs" Link="Production/SettingsEntryRouter.cs" />
+    <Compile Include="../../Source/MenuSearchEntry.cs" Link="Production/MenuSearchEntry.cs" />
+    <Compile Include="../../Source/MenuCatalog.cs" Link="Production/MenuCatalog.cs" />
+    <Compile Include="../../Source/MenuNavigation.cs" Link="Production/MenuNavigation.cs" />
+    <Compile Include="../../Source/MenuBrowseState.cs" Link="Production/MenuBrowseState.cs" />
+    <Compile Include="../../Source/MenuSectionView.cs" Link="Production/MenuSectionView.cs" />
+    <PackageReference Include="Lib.Harmony" Version="2.4.1" />
+  </ItemGroup>
+</Project>

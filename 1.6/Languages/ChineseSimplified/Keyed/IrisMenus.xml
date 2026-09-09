@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <IM_Open>打开 IrisMenus</IM_Open>
+  <IM_Manage>添加 Mod 设置</IM_Manage>
+  <IM_Registered>已注册</IM_Registered>
+  <IM_Added>已添加</IM_Added>
+  <IM_Pages>设置页面</IM_Pages>
+  <IM_ResetWindow>重置窗口位置</IM_ResetWindow>
+  <IM_Frost>毛玻璃背景</IM_Frost>
+  <IM_Blur>模糊：{0}%</IM_Blur>
+  <IM_Transparency>透明度：{0}%</IM_Transparency>
+  <IM_Empty>没有匹配的 Mod 设置。</IM_Empty>
+  <IM_Global>全局选项</IM_Global>
+  <IM_SearchGlobal>搜索全部设置</IM_SearchGlobal>
+  <IM_SearchMod>搜索 {0} 的设置</IM_SearchMod>
+  <IM_Indexing>正在索引...</IM_Indexing>
+  <IM_NoResults>没有匹配的设置。</IM_NoResults>
+  <IM_BackResults>返回搜索结果</IM_BackResults>
+  <IM_ClearSearch>清空搜索</IM_ClearSearch>
+  <IM_Previous>上一页</IM_Previous>
+  <IM_Next>下一页</IM_Next>
+  <IM_ResultPage>{0} / {1}（{2} 项结果）</IM_ResultPage>
+  <IM_PageFailed>无法显示此设置页面。</IM_PageFailed>
+  <IM_Retry>重试</IM_Retry>
+  <IM_OperationFailed>IrisMenus 未能完成操作，详情请查看日志。</IM_OperationFailed>
+</LanguageData>

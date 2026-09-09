@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net48</TargetFramework>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../Source/IrisMenus.csproj" />
+    <PackageReference Include="Krafs.Rimworld.Ref" Version="1.6.4633" PrivateAssets="all" />
+  </ItemGroup>
+</Project>

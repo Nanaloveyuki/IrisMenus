@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <IM_Open>Open IrisMenus</IM_Open>
+  <IM_Manage>Add mod settings</IM_Manage>
+  <IM_Registered>Registered</IM_Registered>
+  <IM_Added>Added</IM_Added>
+  <IM_Pages>Settings pages</IM_Pages>
+  <IM_ResetWindow>Reset window position</IM_ResetWindow>
+  <IM_Frost>Frosted background</IM_Frost>
+  <IM_Blur>Blur: {0}%</IM_Blur>
+  <IM_Transparency>Transparency: {0}%</IM_Transparency>
+  <IM_Empty>No matching mod settings.</IM_Empty>
+  <IM_Global>All settings</IM_Global>
+  <IM_SearchGlobal>Search all settings</IM_SearchGlobal>
+  <IM_SearchMod>Search {0}</IM_SearchMod>
+  <IM_Indexing>Indexing...</IM_Indexing>
+  <IM_NoResults>No matching settings.</IM_NoResults>
+  <IM_BackResults>Back to results</IM_BackResults>
+  <IM_ClearSearch>Clear search</IM_ClearSearch>
+  <IM_Previous>Previous page</IM_Previous>
+  <IM_Next>Next page</IM_Next>
+  <IM_ResultPage>{0} / {1} ({2} results)</IM_ResultPage>
+  <IM_PageFailed>This settings page could not be displayed.</IM_PageFailed>
+  <IM_Retry>Retry</IM_Retry>
+  <IM_OperationFailed>IrisMenus could not complete the operation. See the log for details.</IM_OperationFailed>
+</LanguageData>

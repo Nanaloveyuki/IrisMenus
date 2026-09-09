@@ -1,0 +1,17 @@
+**/bin/
+**/obj/
+1.6/Assemblies/*.dll
+1.6/Assemblies/*.pdb
+1.6/Assemblies/*.deps.json
+.vs/
+tmp/
+Tools/Unity/Library/
+Tools/Unity/Logs/
+Tools/Unity/Temp/
+Tools/Unity/obj/
+Tools/Unity/UserSettings/
+Tools/Unity/ProjectSettings/*.asset
+Tools/Unity/Assets/Runtime/
+Tools/Unity/Assets/Runtime.meta
+1.6/AssetBundles/*.manifest
+1.6/AssetBundles/AssetBundles

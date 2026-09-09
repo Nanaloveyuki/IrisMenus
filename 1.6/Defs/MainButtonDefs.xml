@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Defs>
+  <MainButtonDef>
+    <defName>IrisMenus</defName>
+    <label>IrisMenus</label>
+    <description>IrisMenus</description>
+    <workerClass>IrisMenus.MainButtonWorker_IrisMenus</workerClass>
+    <order>99</order>
+    <validWithoutMap>true</validWithoutMap>
+  </MainButtonDef>
+</Defs>
