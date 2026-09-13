@@ -43,8 +43,9 @@ IMarkdown file = Markdown.StaticFile(string filePath, parser);
 ```
 
 The Markdown API converts the supported Markdown subset to RimWorld/Unity rich
-text. It is not an HTML adapter. Existing `<color=...>...</color>` tags pass
-through unchanged; only `<color>`, `<b>`, and `<i>` rich-text tags are retained,
+text. It is not an HTML adapter. Existing valid `<color=#RRGGBB>...</color>` or
+`<color=#RRGGBBAA>...</color>` tags pass through unchanged; invalid color
+tags are emitted verbatim. Only `<color>`, `<b>`, and `<i>` rich-text tags are retained,
 while other complete tag-shaped markup is removed so measurement and drawing
 use the same text. `**bold**` is parsed only when its opening delimiter is at
 the start, after whitespace, or after a letter/digit; punctuation immediately

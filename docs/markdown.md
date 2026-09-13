@@ -107,7 +107,7 @@ var document = Markdown.StaticFile(
 
 ## `<color>` 兼容
 
-RimWorld 原版生成的 `<color=...>...</color>` 会被识别为已有的富文本标签并原样透传，颜色不会因为 Markdown 解析丢失：
+RimWorld 原版 `ColoredText.Colorize(...)` 生成的 `<color=#RRGGBB>...</color>` 或 `<color=#RRGGBBAA>...</color>` 会先校验格式，合法标签才作为富文本标签保留：
 
 ```text
 <color=#ff0000ff>**危险**</color>
@@ -119,7 +119,7 @@ RimWorld 原版生成的 `<color=...>...</color>` 会被识别为已有的富文
 <color=#ff0000ff><b>危险</b></color>
 ```
 
-因此也可以把已有的 `ColoredText.Colorize(...)` 结果放入动态内容。解析器只保留 RimWorld 的 `<color>`、`<b>` 和 `<i>` 标签，不提供 HTML 标签适配；其他完整的类 XML 标签会被移除。
+因此也可以把已有的 `ColoredText.Colorize(...)` 结果放入动态内容。引号、颜色名称、错误位数或非十六进制字符都会使整个 `<color>` 标签原样输出；该标签之后的 Markdown 仍会继续解析。解析器只保留合法的 RimWorld `<color>`、`<b>` 和 `<i>` 标签，不提供 HTML 标签适配；其他完整的类 XML 标签会被移除。
 
 ## `**` 分隔符边界
 

@@ -121,9 +121,10 @@ namespace IrisMenus
             int index = 0;
             while (index < text.Length)
             {
-                if (TryRichTextTag(text, index, out int tagLength, out bool preserve))
+                if (TryRichTextTag(text, index, out int tagLength, out RichTextTagKind kind))
                 {
-                    if (preserve) result.Append(text, index, tagLength);
+                    if (kind != RichTextTagKind.Unsupported)
+                        result.Append(text, index, tagLength);
                     index += tagLength;
                     continue;
                 }
@@ -256,22 +257,62 @@ namespace IrisMenus
             return null;
         }
 
-        private static bool TryRichTextTag(string text, int index, out int length, out bool preserve)
+        private enum RichTextTagKind
+        {
+            Unsupported,
+            Supported,
+            InvalidColor
+        }
+
+        private static bool TryRichTextTag(string text, int index, out int length, out RichTextTagKind kind)
         {
             length = 0;
-            preserve = false;
+            kind = RichTextTagKind.Unsupported;
             if (index < 0 || index >= text.Length || text[index] != '<') return false;
             int end = text.IndexOf('>', index + 1);
             if (end < 0) return false;
             length = end - index + 1;
-            string body = text.Substring(index + 1, end - index - 1).Trim();
-            preserve = body.Equals("b", StringComparison.OrdinalIgnoreCase) ||
-                body.Equals("/b", StringComparison.OrdinalIgnoreCase) ||
-                body.Equals("i", StringComparison.OrdinalIgnoreCase) ||
-                body.Equals("/i", StringComparison.OrdinalIgnoreCase) ||
-                body.Equals("color", StringComparison.OrdinalIgnoreCase) ||
-                body.Equals("/color", StringComparison.OrdinalIgnoreCase) ||
-                body.StartsWith("color=", StringComparison.OrdinalIgnoreCase);
+            string body = text.Substring(index + 1, end - index - 1);
+            if (IsColorTagCandidate(body))
+            {
+                kind = IsValidColorTag(body) ? RichTextTagKind.Supported : RichTextTagKind.InvalidColor;
+                return true;
+            }
+            string trimmedBody = body.Trim();
+            if (trimmedBody.Equals("b", StringComparison.OrdinalIgnoreCase) ||
+                trimmedBody.Equals("/b", StringComparison.OrdinalIgnoreCase) ||
+                trimmedBody.Equals("i", StringComparison.OrdinalIgnoreCase) ||
+                trimmedBody.Equals("/i", StringComparison.OrdinalIgnoreCase))
+                kind = RichTextTagKind.Supported;
+            return true;
+        }
+
+        private static bool IsColorTagCandidate(string body)
+        {
+            if (body.Equals("color", StringComparison.OrdinalIgnoreCase) ||
+                body.Equals("/color", StringComparison.OrdinalIgnoreCase))
+                return true;
+            if (body.Length > 5 && body.StartsWith("color", StringComparison.OrdinalIgnoreCase) &&
+                (body[5] == '=' || char.IsWhiteSpace(body[5])))
+                return true;
+            return body.Length > 6 && body.StartsWith("/color", StringComparison.OrdinalIgnoreCase) &&
+                char.IsWhiteSpace(body[6]);
+        }
+
+        private static bool IsValidColorTag(string body)
+        {
+            if (body.Equals("/color", StringComparison.OrdinalIgnoreCase)) return true;
+            if (!body.StartsWith("color=", StringComparison.OrdinalIgnoreCase)) return false;
+            string value = body.Substring(6);
+            if ((value.Length != 7 && value.Length != 9) || value[0] != '#') return false;
+            for (int i = 1; i < value.Length; i++)
+            {
+                char digit = value[i];
+                bool hex = digit >= '0' && digit <= '9' ||
+                    digit >= 'a' && digit <= 'f' ||
+                    digit >= 'A' && digit <= 'F';
+                if (!hex) return false;
+            }
             return true;
         }
 

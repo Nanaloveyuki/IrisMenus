@@ -15,6 +15,14 @@ internal static class MarkdownChecks
         check(parser.Parse("text, **bold**") == "text, <b>bold</b>", "Whitespace separates punctuation from bold");
         check(parser.Parse("<color=#ff0000ff>**red**</color>") ==
             "<color=#ff0000ff><b>red</b></color>", "RimWorld color tags remain intact around Markdown");
+        check(parser.Parse("<color=#ffffff>white</color>") ==
+            "<color=#ffffff>white</color>", "Six-digit vanilla color tags remain intact");
+        check(parser.Parse("<color=\"#ffffff\">**white**</color>") ==
+            "<color=\"#ffffff\"><b>white</b></color>", "Invalid quoted color tags remain literal");
+        check(parser.Parse("<color=red>**red**</color>") ==
+            "<color=red><b>red</b></color>", "Invalid named color tags remain literal");
+        check(parser.Parse("<color=#fff>**short**</color>") ==
+            "<color=#fff><b>short</b></color>", "Invalid short color tags remain literal");
         check(parser.Parse("**<color=#ff0000ff>red</color>**") ==
             "<b><color=#ff0000ff>red</color></b>", "RimWorld color tags remain intact inside Markdown");
         check(parser.Parse("<color=#ff0000ff># Heading</color>") ==
