@@ -2,6 +2,8 @@
 
 IrisMenus 是 RimWorld 1.6 的共享 Mod 设置窗口，需要 Harmony，不依赖 RimIris。
 设置值仍由你的 Mod 持有、修改和保存；IrisMenus 负责页面、导航和搜索。
+Markdown 动态内容和外部只读文件的接入方式见
+[docs/markdown.md](docs/markdown.md)。
 
 ## 1. 引用与加载
 
@@ -86,7 +88,7 @@ MenuRegistry.RegisterSearchProvider(this, "details", () => new[]
 ```
 
 实际使用时，高度回调应按可用宽度准确测量内容。分节仅在可见时绘制；宽度或语言变化时自动重新测量。
-展开状态、内容或字体变化导致高度改变时，调用 `view.InvalidateLayout()`。
+动态内容可以把内容快照作为 `MenuSection` 的第四个 `layoutKey` 参数；没有 layout key 时，展开状态、内容或字体变化导致高度改变后调用 `view.InvalidateLayout()`。
 同一个 view 应保持为长期实例，不能每帧创建。
 
 ## 5. 原版设置页与保存

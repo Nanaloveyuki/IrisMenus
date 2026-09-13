@@ -29,11 +29,29 @@ MenuRegistry.Open();
 new MenuSearchEntry(string id, Func<string> title,
     Func<string> keywords = null, Func<string> context = null);
 MenuControls.Anchor(Listing_Standard list, string id, float height = 30f);
+MenuControls.Markdown(Listing_Standard list, IMarkdown markdown);
 
 new MenuScrollView(); // Draw(Rect, Action<Listing_Standard>), Focus(string), Reset()
 new MenuSection(string id, Func<float, float> measure, Action<Rect> draw);
+new MenuSection(string id, Func<float, float> measure, Action<Rect> draw, Func<string> layoutKey);
 new MenuSectionView(IEnumerable<MenuSection> sections); // Draw(Rect), Focus(string), InvalidateLayout()
+
+IMarkdownParser parser = new MarkdownParser();
+IMarkdown live = Markdown.Dynamic(Func<string> getMarkdown, parser);
+IMarkdown file = Markdown.StaticFile(string filePath, parser);
+// IMarkdown exposes MarkdownText, RenderedText, Measure(float), and Draw(Rect).
 ```
+
+The Markdown API converts the supported Markdown subset to RimWorld/Unity rich
+text. It is not an HTML adapter. Existing `<color=...>...</color>` tags pass
+through unchanged; only `<color>`, `<b>`, and `<i>` rich-text tags are retained,
+while other complete tag-shaped markup is removed so measurement and drawing
+use the same text. `**bold**` is parsed only when its opening delimiter is at
+the start, after whitespace, or after a letter/digit; punctuation immediately
+before the delimiter, such as `,**bold**`, keeps the source literal. Dynamic
+sources are re-parsed after their returned string changes. Static files are
+read once as UTF-8 when the object is constructed and are never watched or
+written. See `docs/markdown.md` for the complete usage contract.
 
 These are invocation/signature summaries, not a standalone compilable file. See `tests/ApiConsumer/ExampleMod.cs` for a compile-checked integration.
 
@@ -70,9 +88,9 @@ These are invocation/signature summaries, not a standalone compilable file. See 
 
 - Construct a persistent `MenuSectionView` once. Constructor materializes the section sequence and rejects null sections and duplicate IDs. The section set is fixed; rebuild the view explicitly if membership must change.
 - Measure receives content width (viewport minus scrollbar allowance). Return finite, nonnegative height. Measurement must not draw or have side effects. Eight units of spacing follow each section.
-- All section heights are measured initially and on width/language changes; only intersecting positive-height sections draw. Measurement is cached, but visibility traversal still visits every section, so this is not an O(visible) index.
+- All section heights are measured initially and on width/language changes; only intersecting positive-height sections draw. An optional `layoutKey` is checked before drawing and triggers a full remeasure when it changes. Measurement is otherwise cached, but visibility traversal still visits every section, so this is not an O(visible) index.
 - Draw receives a clipped local rect starting at (0,0). Keep content within measured height; balance all GUI groups. The host restores GUI state around each section.
-- InvalidateLayout when conditional content, text, fonts or other non-width inputs change height. Focus requires an existing section ID, scrolls using recomputed geometry and highlights for four real-time seconds. Search IDs must match sections, or a custom callback must map them explicitly.
+- Use `layoutKey` for dynamic content such as `() => markdown.MarkdownText`; use `InvalidateLayout` when conditional content, text, fonts or other non-width inputs change height without a key. Focus requires an existing section ID, scrolls using recomputed geometry and highlights for four real-time seconds. Search IDs must match sections, or a custom callback must map them explicitly.
 - Section virtualization can stop drawing offscreen text fields; own edit buffers and commit semantics in consumer state, not transient draws.
 
 ## Adapters, errors and lifecycle
@@ -105,6 +123,6 @@ These are invocation/signature summaries, not a standalone compilable file. See 
 
 Repository validation: `./scripts/validate.ps1 -SkipGpu` builds the API consumer, runs linked-production engine-double assertions, validates localization/XML and smoke-deploys with hashes. Full `./scripts/validate.ps1` additionally builds the shader with Unity 2022.3.35 and runs GPU/layout fixtures. Actual installed-game compile: `dotnet build Source/IrisMenus.csproj -c Release -p:RimWorldManagedDir=<game>/RimWorldWin64_Data/Managed` (DLL directory, not decompiled source directory).
 
-Deployment: `./scripts/build-and-deploy.ps1 -SkipBuild -GameModPath <game>/Mods/IrisMenus` after successful build. It checks target package identity, copies runtime files plus both guides and verifies hashes. It does not edit ModsConfig, remove unrelated target files or hot-reload a running game.
+Deployment: `./scripts/build-and-deploy.ps1 -SkipBuild -GameModPath <game>/Mods/IrisMenus` after successful build. It checks target package identity, copies runtime files, both guides, and `docs/`, then verifies hashes. It does not edit ModsConfig, remove unrelated target files or hot-reload a running game.
 
 Acceptance still requires real RimWorld: grouped/legacy/mixed pages, global and scoped searches, page/back restoration, missing anchors, resized/translated targets, long lazy pages, save/draw failures, manual/self-scrolling adapters, UI scales, and reopen/restart persistence. Engine doubles do not execute the real MenuWindow; GPU fixtures cover background/layout, not game UI interactions or FPS.

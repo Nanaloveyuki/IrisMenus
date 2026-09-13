@@ -7,8 +7,10 @@ namespace UnityEngine
     public struct Rect
     {
         public float x, y, width, height;
+        public float xMax => x + width;
         public float yMax => y + height;
         public Rect(float x, float y, float width, float height) { this.x = x; this.y = y; this.width = width; this.height = height; }
+        public bool Overlaps(Rect other) => x < other.xMax && xMax > other.x && y < other.yMax && yMax > other.y;
     }
     public struct Vector2 { public float x, y; public static Vector2 zero => default; }
     public static class Mathf
@@ -70,13 +72,33 @@ namespace Verse
         public bool maxOneColumn;
         public float CurHeight;
         public float ColumnWidth;
+        public UnityEngine.Rect? BoundingRectCached { get; set; }
         public void Begin(UnityEngine.Rect rect) { Widgets.Groups++; ColumnWidth = rect.width; }
         public void End() { Widgets.Groups--; }
+        public UnityEngine.Rect GetRect(float height, float gap = 1f)
+        {
+            UnityEngine.Rect rect = new UnityEngine.Rect(0f, CurHeight, ColumnWidth, height);
+            CurHeight += height * gap;
+            return rect;
+        }
+        public void Gap(float gap) { CurHeight += gap; }
+        public void GapLine(float gap) { Gap(gap); }
+        public void Label(string label) { Widgets.Label(GetRect(Text.CalcHeight(label, ColumnWidth)), label); Gap(4f); }
+        public void CheckboxLabeled(string label, ref bool value, string tooltip = null)
+        {
+            GetRect(30f);
+            Gap(4f);
+        }
     }
     public static class Widgets
     {
         public static bool ButtonText(UnityEngine.Rect rect, string text) => false;
         public static UnityEngine.Color WindowBGFillColor;
+        public static string LastLabel;
+        public static void Label(UnityEngine.Rect rect, string text) { LastLabel = text; }
+        public static float HorizontalSlider(UnityEngine.Rect rect, float value, float min, float max) => value;
+        public static void TextFieldNumeric(UnityEngine.Rect rect, ref int value, ref string buffer, int min, int max) { }
+        public static void TextFieldNumeric(UnityEngine.Rect rect, ref float value, ref string buffer, float min, float max) { }
         public static void DrawBox(UnityEngine.Rect rect) { }
         public static int Highlights;
         public static void DrawHighlight(UnityEngine.Rect rect) { Highlights++; }
@@ -86,6 +108,26 @@ namespace Verse
         public static void BeginScrollView(UnityEngine.Rect viewport, ref UnityEngine.Vector2 position, UnityEngine.Rect content)
         { Groups++; LastContent = content; LastPosition = position; }
         public static void EndScrollView() { Groups--; }
+    }
+    public static class Text
+    {
+        public static float CalcHeight(string text, float width) => text == null ? 0f : text.Length;
+    }
+    public static class TooltipHandler
+    {
+        public static void TipRegion(UnityEngine.Rect rect, string text) { }
+    }
+    public sealed class FloatMenuOption
+    {
+        public FloatMenuOption(string label, Action action) { }
+    }
+    public sealed class FloatMenu : Window
+    {
+        public FloatMenu(List<FloatMenuOption> options) { }
+    }
+    public static class StringExtensions
+    {
+        public static string Truncate(this string value, float maxLength) => value;
     }
 }
 

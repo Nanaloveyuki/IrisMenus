@@ -16,6 +16,9 @@
     <Compile Include="../../Source/MenuNavigation.cs" Link="Production/MenuNavigation.cs" />
     <Compile Include="../../Source/MenuBrowseState.cs" Link="Production/MenuBrowseState.cs" />
     <Compile Include="../../Source/MenuSectionView.cs" Link="Production/MenuSectionView.cs" />
+    <Compile Include="../../Source/MenuControls.cs" Link="Production/MenuControls.cs" />
+    <Compile Include="../../Source/MarkdownParser.cs" Link="Production/MarkdownParser.cs" />
+    <Compile Include="../../Source/MarkdownViews.cs" Link="Production/MarkdownViews.cs" />
     <PackageReference Include="Lib.Harmony" Version="2.4.1" />
   </ItemGroup>
 </Project>

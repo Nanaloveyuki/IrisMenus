@@ -79,6 +79,17 @@ namespace IrisMenus
             if (menu.Count > 0) Find.WindowStack.Add(new FloatMenu(menu));
         }
 
+        public static void Markdown(Listing_Standard list, IMarkdown markdown)
+        {
+            if (list == null) throw new ArgumentNullException(nameof(list));
+            if (markdown == null) throw new ArgumentNullException(nameof(markdown));
+            float height = Mathf.Max(30f, markdown.Measure(list.ColumnWidth));
+            Rect rect = list.GetRect(height);
+            if (list.BoundingRectCached == null || rect.Overlaps(list.BoundingRectCached.Value))
+                markdown.Draw(rect);
+            list.Gap(4f);
+        }
+
         private static Rect FieldRow(Listing_Standard list, string label)
         {
             float height = Mathf.Max(30f, Text.CalcHeight(label, list.ColumnWidth * 0.4f));

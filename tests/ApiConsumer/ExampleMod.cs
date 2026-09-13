@@ -9,6 +9,12 @@ namespace IrisMenusApiConsumer
         private readonly ExampleSettings settings;
         private string numberBuffer;
         private string floatBuffer;
+        private readonly IMarkdown dynamicMarkdown = Markdown.Dynamic(() => "**Live** help text");
+
+        private static IMarkdown StaticMarkdown(string path)
+        {
+            return Markdown.StaticFile(path);
+        }
 
         public ExampleMod(ModContentPack content) : base(content)
         {
@@ -20,13 +26,16 @@ namespace IrisMenusApiConsumer
             });
             var sections = new MenuSectionView(new[]
             {
-                new MenuSection("advanced", width => 60f, rect => Widgets.Label(rect, "Advanced options"))
+                new MenuSection("advanced", width => 60f, rect => Widgets.Label(rect, "Advanced options")),
+                new MenuSection("markdown", dynamicMarkdown.Measure, dynamicMarkdown.Draw,
+                    () => dynamicMarkdown.MarkdownText)
             });
             MenuRegistry.RegisterSubItem(this, "advanced", () => "Advanced", sections.Draw);
             MenuRegistry.RegisterSearchProvider(this, "advanced", () => new[]
             {
                 new MenuSearchEntry("advanced", () => "Advanced options")
-            }, sections.Focus);
+                }, sections.Focus);
+            MenuRegistry.RegisterSubItem(this, "markdown", () => "Markdown", dynamicMarkdown.Draw);
         }
 
         private void Draw(Listing_Standard listing)
@@ -38,6 +47,7 @@ namespace IrisMenusApiConsumer
             MenuControls.Number(listing, "Samples", ref settings.SampleCount, ref numberBuffer, 1, 16);
             MenuControls.Number(listing, "Threshold", ref settings.Threshold, ref floatBuffer, 0f, 1f);
             MenuControls.Select(listing, "Mode", settings.Mode, new[] { "Default", "Custom" }, value => value, value => settings.Mode = value);
+            MenuControls.Markdown(listing, dynamicMarkdown);
         }
     }
 

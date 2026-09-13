@@ -8,6 +8,8 @@ and unrelated game settings remain untouched.
 
 See [guide.md](guide.md) for the Chinese integration walkthrough and
 [guide_agents.md](guide_agents.md) for exact API contracts and troubleshooting.
+Markdown help and documentation content is covered in
+[docs/markdown.md](docs/markdown.md).
 Pages are grouped by Mod; only the selected group expands. Existing single-page
 registrations still open directly. Search supports global or owner-wide metadata
 results, pagination, and explicit anchors without drawing unselected pages.
@@ -73,7 +75,8 @@ Unbalanced third-party IMGUI groups cannot be reliably recovered by the host.
 ```
 
 Deployment is opt-in. It creates a new target or verifies an existing target's
-package ID, copies runtime package files and both integration guides, and verifies each file hash.
+package ID, copies runtime package files, both integration guides, and `docs/`,
+then verifies each file hash.
 It never edits ModsConfig or removes other files.
 
 Shader builds need Unity 2022.3.35 on Windows with D3D11. The script discovers

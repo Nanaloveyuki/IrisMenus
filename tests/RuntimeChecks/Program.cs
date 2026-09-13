@@ -15,6 +15,7 @@ internal static class Program
         BackgroundLifecycle();
         SettingsRoundTrip();
         Routing();
+        MarkdownChecks.Run(Check);
         CatalogChecks.Run(Check);
         Console.WriteLine("PASS: " + assertions + " runtime assertions (engine doubles; no game rendering).");
     }
