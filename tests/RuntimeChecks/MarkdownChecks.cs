@@ -36,6 +36,8 @@ internal static class MarkdownChecks
             "<b>Heading</b>\n- <b>item</b>\n1. <i>next</i>", "Common settings-page blocks are parsed");
         check(parser.Parse(@"\**bold**") == "**bold**", "Escaped Markdown delimiter stays literal");
         check(parser.Parse("line\r\nnext") == "line\nnext", "Windows line endings are normalized");
+        check(parser.Parse("See [the guide](guide/start.md) now") ==
+            "See <color=#66b3ffff>the guide</color> now", "Markdown links render with link color");
 
         string source = "**one**";
         var dynamicParser = new CountingParser();

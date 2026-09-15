@@ -136,6 +136,21 @@ namespace IrisMenus
                     continue;
                 }
 
+                if (text[index] == '[')
+                {
+                    int labelEnd = text.IndexOf(']', index + 1);
+                    if (labelEnd > index + 1 && labelEnd + 1 < text.Length && text[labelEnd + 1] == '('
+                        && text.IndexOf(')', labelEnd + 2) is int destinationEnd && destinationEnd > labelEnd + 2)
+                    {
+                        string label = text.Substring(index + 1, labelEnd - index - 1);
+                        result.Append("<color=#66b3ffff>");
+                        result.Append(ParseInline(label));
+                        result.Append("</color>");
+                        index = destinationEnd + 1;
+                        continue;
+                    }
+                }
+
                 if (StartsWith(text, index, "**") && IsStandaloneDelimiter(text, index, 2) &&
                     IsOpeningDelimiter(text, index, 2))
                 {
