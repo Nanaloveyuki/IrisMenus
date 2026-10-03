@@ -110,8 +110,7 @@ namespace IrisMenus
                 native = owned.FirstOrDefault(page => page.Id == last) ?? native;
             if (native != null) return native;
             if (!IrisMenusMod.Instance.Settings.EnabledAdapters.Contains(OwnerId(owner))) return null;
-            return AttachAdapterSearch(new MenuPage(OwnerId(owner), owner, owner.SettingsCategory,
-                owner.DoSettingsWindowContents, owner.WriteSettings, true));
+            return AttachAdapterSearch(SettingsAdapter.Create(owner, owner.SettingsCategory));
         }
 
         internal static List<MenuPage> Adaptable()
@@ -124,8 +123,7 @@ namespace IrisMenus
                 {
                     string title = mod.SettingsCategory();
                     if (string.IsNullOrWhiteSpace(title)) continue;
-                    pages.Add(AttachAdapterSearch(new MenuPage(OwnerId(mod), mod, () => title,
-                        mod.DoSettingsWindowContents, mod.WriteSettings, true)));
+                    pages.Add(AttachAdapterSearch(SettingsAdapter.Create(mod, () => title)));
                 }
                 catch (Exception exception)
                 {

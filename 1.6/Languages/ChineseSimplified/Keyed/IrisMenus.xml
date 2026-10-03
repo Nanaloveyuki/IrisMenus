@@ -2,6 +2,8 @@
 <LanguageData>
   <IM_Open>打开 IrisMenus</IM_Open>
   <IM_Manage>添加 Mod 设置</IM_Manage>
+  <IM_OpenOriginalSettings>打开原生设置窗口</IM_OpenOriginalSettings>
+  <IM_ExternalSettings>此 Mod 使用独立设置窗口。请点击下方按钮打开，并在该窗口中保存修改。</IM_ExternalSettings>
   <IM_Registered>已注册</IM_Registered>
   <IM_Added>已添加</IM_Added>
   <IM_Pages>设置页面</IM_Pages>

@@ -11,6 +11,7 @@
     <Compile Include="../../Source/FrostBackground.cs" Link="Production/FrostBackground.cs" />
     <Compile Include="../../Source/IrisMenusMod.cs" Link="Production/IrisMenusMod.cs" />
     <Compile Include="../../Source/SettingsEntryRouter.cs" Link="Production/SettingsEntryRouter.cs" />
+    <Compile Include="../../Source/SettingsAdapter.cs" Link="Production/SettingsAdapter.cs" />
     <Compile Include="../../Source/MenuSearchEntry.cs" Link="Production/MenuSearchEntry.cs" />
     <Compile Include="../../Source/MenuCatalog.cs" Link="Production/MenuCatalog.cs" />
     <Compile Include="../../Source/MenuNavigation.cs" Link="Production/MenuNavigation.cs" />

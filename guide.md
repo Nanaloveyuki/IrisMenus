@@ -93,10 +93,14 @@ MenuRegistry.RegisterSearchProvider(this, "details", () => new[]
 
 ## 5. 原版设置页与保存
 
-用户可以在添加设置页面中手动选择原版 Mod；适配页直接调用它的 `DoSettingsWindowContents(Rect)`，不再套一层滚动。
+用户可以在添加设置页面中手动选择原版 Mod；普通适配页直接调用它的 `DoSettingsWindowContents(Rect)`，不再套一层滚动。
 没有额外元数据时只能按 Mod/页面名称搜索并打开整页，无法自动识别控件。
 `RegisterAdapterSearch(owner, provider, focus)` 可以补充元数据和自定义定位，但不会自动启用托管，也不会自动拆分分类。
 需要独立分类时，应显式注册多个页面。
+
+Character Editor（创意工坊 1874644848）的该方法实际是独立窗口启动器，不能逐帧调用。
+托管后，其页面显示“打开原生设置窗口”按钮；点击才打开，已经打开时只聚焦，关闭后不会自动重开。
+请在 Character Editor 原生窗口中点击“保存”。已有手动勾选继续有效，无需取消再添加。
 
 各注册接口最后一个可选参数是保存回调，默认 `owner.WriteSettings`。
 切换页面或关闭窗口时保存，失败会保留当前页/窗口供重试。设置是即时修改的，关闭不是取消。
@@ -104,3 +108,17 @@ MenuRegistry.RegisterSearchProvider(this, "details", () => new[]
 
 完整、参与编译验证的示例位于仓库 `tests/ApiConsumer/ExampleMod.cs`。
 引擎替身测试和编译不能替代游戏实测：接入后需检查切页、定位、长翻译、窗口缩放、保存与重启。
+
+## 6. WSL 构建与部署
+
+```bash
+./scripts/deploy.sh
+./scripts/deploy.sh --build-only
+RIMWORLD_DIR='/mnt/d/Steam/steamapps/common/RimWorld' ./scripts/deploy.sh
+```
+
+默认 Release，使用已安装游戏的程序集编译，部署到 `E:\Apps\Steam\steamapps\common\RimWorld\Mods\IrisMenus`。
+`CONFIGURATION=Debug` 可切换配置，`RIMWORLD_DIR` 可覆盖游戏目录（兼容 `RimWorldDir`）。
+沿用仓库中的 Shader bundle，不启动 Unity。部署前需退出游戏；脚本检查进程、目标包标识、完整文件清单及符号链接，复制后校验 SHA-256。
+只部署 IrisMenus 运行文件和说明，不复制 Harmony/游戏程序集，不修改 ModsConfig，也不删除目标中的其他文件。
+

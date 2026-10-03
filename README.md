@@ -60,11 +60,21 @@ user selected that owner for hosting. Existing IrisMenus windows are reused.
 Unselecting the owner restores its original entry immediately; custom dialog
 subclasses are not redirected. No mod's drawing method is patched.
 
-The adapter calls the original `DoSettingsWindowContents(Rect)` directly,
-without an extra outer scroll view, and uses the original `WriteSettings()`.
+Ordinary adapters call the original `DoSettingsWindowContents(Rect)` directly,
+without an extra outer scroll view, and use the original `WriteSettings()`.
 It does not emulate `Dialog_ModSettings`, its lifecycle, or mod-specific patches
 to that dialog. Drawing failures are logged and the page exposes a retry action.
 Unbalanced third-party IMGUI groups cannot be reliably recovered by the host.
+
+Character Editor (`CharacterEditor.CharacterEditorMod`, Workshop 1874644848)
+uses its drawing callback to open a separate configuration window and close
+the vanilla settings dialog. Its hosted page therefore provides an **Open
+original settings window** button instead of invoking that callback every
+IMGUI event. Clicking opens the original window, or focuses it if already open;
+closing it never automatically reopens it. Save changes with Character Editor's
+own Save button. Existing manual selections and settings entry routing still
+work; explicit page registrations retain precedence. No Character Editor
+methods or private settings are patched or reflected.
 
 ## Build
 
@@ -73,6 +83,23 @@ Unbalanced third-party IMGUI groups cannot be reliably recovered by the host.
 ./scripts/validate.ps1
 ./scripts/build-and-deploy.ps1 -SkipBuild -GameModPath 'D:\Appdata\Steam\steamapps\common\RimWorld\Mods\IrisMenus'
 ```
+
+On WSL, build against the installed game's managed assemblies and deploy to
+`E:\Apps\Steam\steamapps\common\RimWorld\Mods\IrisMenus`:
+
+```bash
+./scripts/deploy.sh
+./scripts/deploy.sh --build-only
+RIMWORLD_DIR='/mnt/d/Steam/steamapps/common/RimWorld' ./scripts/deploy.sh
+```
+
+`CONFIGURATION` defaults to `Release` (`Debug` is also accepted). `RIMWORLD_DIR`
+overrides the default game directory; `RimWorldDir` is accepted as a fallback.
+The script reuses the checked-in shader bundle without running Unity, refuses
+deployment while RimWorld is running, validates the complete file manifest and
+target package identity before copying, rejects destination symlink redirects,
+and verifies SHA-256 hashes. It deploys only IrisMenus runtime files, README,
+both guides, and `docs/`; Harmony and game assemblies are never copied.
 
 Deployment is opt-in. It creates a new target or verifies an existing target's
 package ID, copies runtime package files, both integration guides, and `docs/`,

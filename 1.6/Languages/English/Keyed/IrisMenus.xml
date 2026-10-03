@@ -2,6 +2,8 @@
 <LanguageData>
   <IM_Open>Open IrisMenus</IM_Open>
   <IM_Manage>Add mod settings</IM_Manage>
+  <IM_OpenOriginalSettings>Open original settings window</IM_OpenOriginalSettings>
+  <IM_ExternalSettings>This mod uses a separate settings window. Open it with the button below and save changes in that window.</IM_ExternalSettings>
   <IM_Registered>Registered</IM_Registered>
   <IM_Added>Added</IM_Added>
   <IM_Pages>Settings pages</IM_Pages>

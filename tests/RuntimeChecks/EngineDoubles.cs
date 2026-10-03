@@ -60,6 +60,8 @@ namespace Verse
     public class WindowStack
     {
         public List<object> Windows = new List<object>();
+        public int Count => Windows.Count;
+        public Window this[int index] => (Window)Windows[index];
         public bool IsOpen<T>() => Windows.Exists(window => window is T);
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
         public void Add(Window window) { Windows.Add(window); }
@@ -92,7 +94,13 @@ namespace Verse
     }
     public static class Widgets
     {
-        public static bool ButtonText(UnityEngine.Rect rect, string text) => false;
+        public static bool ClickNextButton;
+        public static bool ButtonText(UnityEngine.Rect rect, string text)
+        {
+            bool clicked = ClickNextButton;
+            ClickNextButton = false;
+            return clicked;
+        }
         public static UnityEngine.Color WindowBGFillColor;
         public static string LastLabel;
         public static void Label(UnityEngine.Rect rect, string text) { LastLabel = text; }
