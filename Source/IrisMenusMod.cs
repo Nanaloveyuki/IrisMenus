@@ -29,6 +29,14 @@ namespace IrisMenus
                 Settings.X = Settings.Y = -1f;
                 WriteSettings();
             }
+            bool remember = Settings.RememberState;
+            Rect rememberRect = new Rect(inRect.x, inRect.y + 88f, Mathf.Min(inRect.width, 320f), 28f);
+            Widgets.CheckboxLabeled(rememberRect, "IM_RememberState".Translate(), ref remember);
+            TooltipHandler.TipRegion(rememberRect, "IM_RememberStateTip".Translate());
+            if (remember == Settings.RememberState) return;
+            Settings.RememberState = remember;
+            if (!remember) Settings.ClearRememberedView();
+            WriteSettings();
         }
     }
 
@@ -42,8 +50,10 @@ namespace IrisMenus
         internal bool FrostEnabled = true;
         internal float Blur = 0.5f;
         internal float Transparency = 0.65f;
+        internal bool RememberState = true;
         internal string LastPage;
         internal Dictionary<string, string> LastSubItems = new Dictionary<string, string>();
+        internal Dictionary<string, string> HostView = new Dictionary<string, string>();
 
         public override void ExposeData()
         {
@@ -56,11 +66,22 @@ namespace IrisMenus
             Scribe_Values.Look(ref Blur, "blur", 0.5f);
             Scribe_Values.Look(ref Transparency, "transparency", 0.65f);
             Scribe_Values.Look(ref LastPage, "lastPage");
+            Scribe_Values.Look(ref RememberState, "rememberState", true);
             Scribe_Collections.Look(ref LastSubItems, "lastSubItems", LookMode.Value, LookMode.Value);
+            Scribe_Collections.Look(ref HostView, "hostView", LookMode.Value, LookMode.Value);
             if (EnabledAdapters == null) EnabledAdapters = new List<string>();
             if (LastSubItems == null) LastSubItems = new Dictionary<string, string>();
+            if (HostView == null) HostView = new Dictionary<string, string>();
             Blur = Mathf.Clamp01(MenuLayout.Finite(Blur, 0.5f));
             Transparency = Mathf.Clamp01(MenuLayout.Finite(Transparency, 0.65f));
+        }
+
+        internal void ClearRememberedView()
+        {
+            LastPage = null;
+            LastSubItems.Clear();
+            HostView.Clear();
+            MenuRegistry.ResetListingScroll();
         }
     }
 

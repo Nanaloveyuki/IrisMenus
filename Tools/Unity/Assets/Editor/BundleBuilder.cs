@@ -83,6 +83,10 @@ public static class BundleBuilder
                     int bottom = output.width * 8 + output.width / 2;
                     int top = output.width * (output.height - 9) + output.width / 2;
                     Require(blurred[bottom].b > blurred[bottom].r && blurred[top].r > blurred[top].b, "Vertical orientation " + size);
+                    Execute(source, output, scratch, material, true);
+                    Color[] flipped = Read(output, null);
+                    Require(flipped[bottom].r > flipped[bottom].b && flipped[top].b > flipped[top].r,
+                        "Top-origin capture normalization " + size);
                     Require(Math.Abs(sharp.Average(c => c.r) - blurred.Average(c => c.r)) < 0.025, "Color mean preserved " + size);
                 }
                 finally
@@ -97,12 +101,12 @@ public static class BundleBuilder
         finally { UnityEngine.Object.DestroyImmediate(material); }
     }
 
-    private static void Execute(Texture source, RenderTexture output, RenderTexture scratch, Material material)
+    private static void Execute(Texture source, RenderTexture output, RenderTexture scratch, Material material, bool flipY = false)
     {
         RenderTexture previous = RenderTexture.active;
         using (var commands = new CommandBuffer())
         {
-            FrostPipeline.Record(commands, source, output, scratch, material);
+            FrostPipeline.Record(commands, source, output, scratch, material, flipY);
             Graphics.ExecuteCommandBuffer(commands);
         }
         RenderTexture.active = previous;

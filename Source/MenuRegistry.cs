@@ -38,7 +38,9 @@ namespace IrisMenus
             if (draw == null) throw new ArgumentNullException(nameof(draw));
             var scroll = new MenuScrollView();
             Register(owner, pageId, title, rect => scroll.Draw(rect, draw), save);
-            FindRegistered(owner, pageId).Focus = scroll.Focus;
+            MenuPage page = FindRegistered(owner, pageId);
+            page.Focus = scroll.Focus;
+            page.ListingScroll = scroll;
         }
 
         public static void RegisterSubItem(Mod owner, string pageId, Func<string> title, Action<Rect> draw, Action save = null)
@@ -72,6 +74,10 @@ namespace IrisMenus
         }
 
         public static void InvalidateSearchIndex() { Revision++; }
+        internal static void ResetListingScroll()
+        {
+            foreach (MenuPage page in registered) page.ListingScroll?.Reset();
+        }
 
         private static MenuPage FindRegistered(Mod owner, string pageId)
         {
@@ -106,7 +112,7 @@ namespace IrisMenus
             if (owner == null || owner is IrisMenusMod) return null;
             var owned = registered.Where(page => ReferenceEquals(page.Owner, owner)).ToList();
             MenuPage native = owned.FirstOrDefault();
-            if (IrisMenusMod.Instance.Settings.LastSubItems.TryGetValue(OwnerId(owner), out string last))
+            if (IrisMenusMod.Instance.Settings.RememberState && IrisMenusMod.Instance.Settings.LastSubItems.TryGetValue(OwnerId(owner), out string last))
                 native = owned.FirstOrDefault(page => page.Id == last) ?? native;
             if (native != null) return native;
             if (!IrisMenusMod.Instance.Settings.EnabledAdapters.Contains(OwnerId(owner))) return null;
@@ -145,6 +151,7 @@ namespace IrisMenus
         internal bool IsSubItem;
         internal Func<IEnumerable<MenuSearchEntry>> SearchProvider;
         internal Action<string> Focus;
+        internal MenuScrollView ListingScroll;
         private bool titleFailed;
 
         internal string DisplayTitle

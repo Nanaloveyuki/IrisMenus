@@ -31,6 +31,7 @@ namespace UnityEngine
     }
     public class GUIStyle { }
     public enum EventType { Repaint }
+    public enum ScaleMode { StretchToFill }
     public class Event { public static Event current = new Event(); public EventType type; }
     public static class Time { public static int frameCount; public static float realtimeSinceStartup; }
     public static class GUI
@@ -40,6 +41,12 @@ namespace UnityEngine
         public static float OverlayAlpha;
         public static void DrawTextureWithTexCoords(Rect rect, object texture, Rect uv) { TextureDraws++; }
         public static void DrawTexture(Rect rect, object texture) { OverlayAlpha = color.a; }
+        public static void DrawTexture(Rect rect, object texture, ScaleMode scaleMode, bool alphaBlend,
+            float imageAspect, Color tint, float borderWidth, float borderRadius)
+        {
+            if (texture != Verse.BaseContent.WhiteTex) TextureDraws++;
+            else if (borderWidth == 0f) OverlayAlpha = tint.a;
+        }
         public static void BeginGroup(Rect rect) { Verse.Widgets.Groups++; }
         public static void EndGroup() { Verse.Widgets.Groups--; }
     }
@@ -92,6 +99,7 @@ namespace IrisMenus
         internal FrostPipeline(Shader shader) { Created++; }
         internal void Bind(Camera camera, int width, int height, float strength)
         { Camera = camera; Texture = new object(); Binds++; }
+        internal object Crop(Rect uv) => Texture;
         internal void ReleaseTargets() { Camera = null; Texture = null; }
         public void Dispose() { Disposed++; ReleaseTargets(); }
     }

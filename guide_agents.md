@@ -61,9 +61,9 @@ These are invocation/signature summaries, not a standalone compilable file. See 
 - Owner identity is `Content.PackageIdPlayerFacing + ":" + GetType().FullName`; page identity appends `":" + pageId`. Keep IDs and owner type stable across versions. Renaming loses remembered navigation unless separately migrated.
 - Registration rejects null owner/title/draw and blank page ID; duplicate full page ID throws. Search declarations require an already registered page. Re-declaring a provider replaces its metadata provider and increments the registry revision.
 - All pages of an owner group together when there are multiple pages. A single legacy page opens directly; a single explicit SubItem retains a parent heading. Mixed legacy/SubItem registrations share one group.
-- Only the selected owner expands. Selecting the owner heading restores its last page, falling back to the first available page when removed. `LastSubItems` and `LastPage` persist through host settings.
+- Only the selected owner expands. Selecting the owner heading restores its last page, falling back to the first available page when removed. With default-on Remember last page, `LastSubItems`, `LastPage` and the host view persist through host settings. Disabling memory clears host navigation and opens the global catalog next time; geometry, appearance and consumer values are unaffected.
 - The global catalog is a directory of pages plus declared settings, not a combined settings editor. Search scope is all hosted pages or all categories of the selected owner.
-- Opening a search hit retains the original search scope, query, result-page index and scroll. Back returns to those results. Explicit navigation clears the query and resets result pagination. Search state is window-local.
+- Opening a search hit retains the original search scope, query, result-page index and scroll. Back returns to those results. Explicit navigation clears the query and resets result pagination. With memory enabled, reopen/restart also restores search/management mode, host scroll positions, compact navigation visibility and registered Listing scrolling. Explicit Mod entry routing takes precedence over saved search state. Custom/adapted page state remains consumer-owned.
 
 ## Metadata and incremental work
 

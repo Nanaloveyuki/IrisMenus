@@ -34,7 +34,9 @@ namespace IrisMenus
                 Texture = CreateTarget(w, h, "IrisMenus Frost");
                 scratch = CreateTarget(w, h, "IrisMenus Frost Scratch");
                 commands = new CommandBuffer { name = "IrisMenus Frost" };
-                Record(commands, BuiltinRenderTextureType.CameraTarget, Texture, scratch, material);
+                // D3D backbuffers are top-origin; render textures use bottom-origin sampling.
+                Record(commands, BuiltinRenderTextureType.CameraTarget, Texture, scratch, material,
+                    source.targetTexture == null && SystemInfo.graphicsUVStartsAtTop);
                 commands.SetRenderTarget(BuiltinRenderTextureType.CameraTarget);
                 camera = source;
                 camera.AddCommandBuffer(CameraEvent.AfterEverything, commands);
@@ -43,11 +45,20 @@ namespace IrisMenus
         }
 
         internal static void Record(CommandBuffer buffer, RenderTargetIdentifier source,
-            RenderTexture output, RenderTexture scratch, Material blur)
+            RenderTexture output, RenderTexture scratch, Material blur, bool flipY = false)
         {
-            buffer.Blit(source, output);
+            buffer.Blit(source, output, new Vector2(1f, flipY ? -1f : 1f), new Vector2(0f, flipY ? 1f : 0f));
             buffer.Blit(output, scratch, blur, 0);
             buffer.Blit(scratch, output, blur, 1);
+        }
+
+        internal RenderTexture Crop(Rect uv)
+        {
+            // Blur no longer needs scratch until the next camera render; reuse it for the GUI crop.
+            RenderTexture previous = RenderTexture.active;
+            try { Graphics.Blit(Texture, scratch, new Vector2(uv.width, uv.height), new Vector2(uv.x, uv.y)); }
+            finally { RenderTexture.active = previous; }
+            return scratch;
         }
 
         private static RenderTexture CreateTarget(int width, int height, string name)

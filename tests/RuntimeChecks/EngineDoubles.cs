@@ -107,6 +107,7 @@ namespace Verse
         public static float HorizontalSlider(UnityEngine.Rect rect, float value, float min, float max) => value;
         public static void TextFieldNumeric(UnityEngine.Rect rect, ref int value, ref string buffer, int min, int max) { }
         public static void TextFieldNumeric(UnityEngine.Rect rect, ref float value, ref string buffer, float min, float max) { }
+        public static void CheckboxLabeled(UnityEngine.Rect rect, string label, ref bool value) { }
         public static void DrawBox(UnityEngine.Rect rect) { }
         public static int Highlights;
         public static void DrawHighlight(UnityEngine.Rect rect) { Highlights++; }

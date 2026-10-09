@@ -24,6 +24,8 @@ namespace IrisMenus
         private Vector2 adapterScroll;
         private bool showNavigation;
         private bool closeSaved;
+        private bool restoreResultScroll;
+        private MenuPage requestedPage;
         private MenuSettings Settings => IrisMenusMod.Instance.Settings;
 
         public MenuWindow() : this(new FrostBackground(), null) { }
@@ -33,6 +35,7 @@ namespace IrisMenus
         {
             background = drawing;
             background.Owner = this;
+            drawShadow = false;
             forcePause = true;
             absorbInputAroundWindow = true;
             draggable = true;
@@ -40,12 +43,10 @@ namespace IrisMenus
             doCloseX = true;
             closeOnAccept = false;
             closeOnClickedOutside = false;
+            requestedPage = requested;
             adapters = MenuRegistry.Adaptable();
             pages = MenuRegistry.Registered.Concat(Hosted()).ToList();
-            MenuPage initial = requested == null
-                ? pages.FirstOrDefault(page => page.Id == Settings.LastPage)
-                : pages.FirstOrDefault(page => page.Id == requested.Id) ?? requested;
-            if (initial != null) { session.Select(initial); browse.Navigate(initial); }
+            RestoreOpeningState();
             RefreshCatalog();
         }
 
@@ -87,9 +88,97 @@ namespace IrisMenus
             Settings.Height = windowRect.height;
             Settings.X = windowRect.x;
             Settings.Y = windowRect.y;
-            Settings.LastPage = session.Selected?.Id;
+            if (Settings.RememberState)
+            {
+                Settings.LastPage = session.Selected?.Id;
+                CaptureHostView();
+            }
             try { IrisMenusMod.Instance.WriteSettings(); return true; }
             catch (Exception exception) { ReportFailure("save window settings", exception); return false; }
+        }
+
+        private void RestoreOpeningState()
+        {
+            if (!Settings.RememberState)
+            {
+                MenuRegistry.ResetListingScroll();
+                session.Select(requestedPage);
+                if (requestedPage != null) browse.Navigate(requestedPage);
+                return;
+            }
+            MenuPage remembered = pages.FirstOrDefault(page => page.Id == Settings.LastPage);
+            bool explicitRequest = requestedPage != null;
+            MenuPage initial = explicitRequest
+                ? pages.FirstOrDefault(page => page.Id == requestedPage.Id) ?? requestedPage
+                : remembered ?? AvailableRememberedPage(Settings.LastPage);
+            if (initial != null) session.Select(initial);
+            Dictionary<string, string> view = Settings.HostView;
+            if (!explicitRequest && view.Count > 0)
+            {
+                view.TryGetValue("scope", out string scope);
+                bool scopeAvailable = scope == null || pages.Any(page => MenuRegistry.OwnerId(page.Owner) == scope);
+                MenuPage target = view.TryGetValue("target", out string targetId)
+                    ? pages.FirstOrDefault(page => page.Id == targetId) : null;
+                if (target == null && view.TryGetValue("mode", out string mode) && mode == "target")
+                    target = initial;
+                if (target != null && session.Select(target)) initial = target;
+                browse.Restore(view, target ?? initial, scopeAvailable);
+                if (browse.ViewingTarget && session.Selected == null)
+                {
+                    browse.Navigate(null);
+                    browse.Search(view.TryGetValue("query", out string query) ? query : "");
+                }
+            }
+            else if (initial != null) browse.Navigate(initial);
+            RestoreListingScroll();
+            if (explicitRequest) return;
+            if (float.TryParse(View("resultScroll"), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float result))
+            { resultScroll.y = result; restoreResultScroll = result > 0f; }
+            if (float.TryParse(View("navigationScroll"), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float navigation))
+                navigationScroll.y = navigation;
+            if (float.TryParse(View("adapterScroll"), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float adapter))
+                adapterScroll.y = adapter;
+            showNavigation = View("showNavigation") == "1";
+        }
+
+        private MenuPage AvailableRememberedPage(string lastPage)
+        {
+            if (lastPage == null) return null;
+            foreach (MenuPage page in pages)
+                if (lastPage.StartsWith(MenuRegistry.OwnerId(page.Owner) + ":", StringComparison.Ordinal)) return page;
+            return null;
+        }
+
+        private string View(string key) => Settings.HostView.TryGetValue(key, out string value) ? value : null;
+
+        private void CaptureHostView()
+        {
+            Dictionary<string, string> view = Settings.HostView;
+            var listing = new List<string>();
+            foreach (string key in view.Keys)
+                if (key.StartsWith("listing:", StringComparison.Ordinal)) listing.Add(key);
+            foreach (string key in listing) view.Remove(key);
+            browse.Capture(view, session.Selected);
+            view["resultScroll"] = resultScroll.y.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            view["navigationScroll"] = navigationScroll.y.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            view["adapterScroll"] = adapterScroll.y.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            view["showNavigation"] = showNavigation ? "1" : "0";
+            foreach (MenuPage page in pages)
+            {
+                if (page.ListingScroll == null || page.ListingScroll.PositionY <= 0f) continue;
+                view["listing:" + page.Id] = page.ListingScroll.PositionY.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            }
+        }
+
+        private void RestoreListingScroll()
+        {
+            foreach (MenuPage page in pages)
+            {
+                if (page.ListingScroll == null) continue;
+                if (Settings.HostView.TryGetValue("listing:" + page.Id, out string stored) &&
+                    float.TryParse(stored, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float offset))
+                    page.ListingScroll.PositionY = offset;
+            }
         }
 
         public override void DoWindowContents(Rect inRect)
@@ -160,6 +249,15 @@ namespace IrisMenus
             bool enabled = Settings.FrostEnabled;
             Widgets.CheckboxLabeled(new Rect(toggleX, toggleY, Mathf.Min(180f, footer.width - toggleX - 24f), 24f), "IM_Frost".Translate(), ref Settings.FrostEnabled);
             if (enabled != Settings.FrostEnabled) background.Retry();
+            bool remembering = Settings.RememberState;
+            Rect remember = new Rect(toggleX, toggleY + 26f, Mathf.Min(220f, Mathf.Max(1f, footer.width - toggleX - 8f)), 22f);
+            Widgets.CheckboxLabeled(remember, "IM_RememberState".Translate(), ref remembering);
+            TooltipHandler.TipRegion(remember, "IM_RememberStateTip".Translate());
+            if (remembering != Settings.RememberState)
+            {
+                Settings.RememberState = remembering;
+                if (!remembering) Settings.ClearRememberedView();
+            }
             float sliderWidth = layout.Compact ? footer.width / 2f - 16f : Mathf.Max(120f, layout.Navigation.width - 20f);
             GUI.enabled = Settings.FrostEnabled;
             Settings.Blur = FooterSlider(new Rect(10f, footer.y + 4f, sliderWidth, 28f), "IM_Blur", Settings.Blur);
@@ -295,7 +393,7 @@ namespace IrisMenus
 
         private void RememberPage(MenuPage page)
         {
-            if (page != null) Settings.LastSubItems[MenuRegistry.OwnerId(page.Owner)] = page.Id;
+            if (page != null && Settings.RememberState) Settings.LastSubItems[MenuRegistry.OwnerId(page.Owner)] = page.Id;
             RebuildNavigation();
         }
 
@@ -354,7 +452,11 @@ namespace IrisMenus
         private void DrawResults(Rect rect)
         {
             int count = catalog.Results.Count;
-            if (!catalog.Pending) browse.ResultPage = Math.Min(browse.ResultPage, Math.Max(0, (count - 1) / MenuCatalog.PageSize));
+            if (!catalog.Pending)
+            {
+                int pageCount = Math.Max(1, (count + MenuCatalog.PageSize - 1) / MenuCatalog.PageSize);
+                browse.ResultPage = Math.Min(browse.ResultPage, pageCount - 1);
+            }
             int start = browse.ResultPage * MenuCatalog.PageSize;
             int end = Math.Min(count, start + MenuCatalog.PageSize);
             Rect viewport = new Rect(rect.x, rect.y, rect.width, Mathf.Max(1f, rect.height - 36f));
@@ -363,7 +465,10 @@ namespace IrisMenus
             if (end <= start) Widgets.Label(viewport, (catalog.Pending ? "IM_Indexing" : "IM_NoResults").Translate());
             else
             {
-                Widgets.BeginScrollView(viewport, ref resultScroll, new Rect(0f, 0f, width, Math.Max(viewport.height, (end - start) * rowHeight)));
+                Vector2 scroll = catalog.Pending && restoreResultScroll ? Vector2.zero : resultScroll;
+                Widgets.BeginScrollView(viewport, ref scroll, new Rect(0f, 0f, width, Math.Max(viewport.height, (end - start) * rowHeight)));
+                if (!catalog.Pending || !restoreResultScroll) resultScroll = scroll;
+                if (!catalog.Pending) restoreResultScroll = false;
                 try
                 {
                     for (int i = start; i < end; i++)

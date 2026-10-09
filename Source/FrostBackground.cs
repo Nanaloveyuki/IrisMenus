@@ -8,6 +8,7 @@ namespace IrisMenus
     internal sealed class FrostBackground : IWindowDrawing, IDisposable
     {
         private readonly DefaultWindowDrawing vanilla = new DefaultWindowDrawing();
+        internal const float CornerRadius = 12f;
         internal Window Owner;
         private FrostPipeline pipeline;
         private bool failed;
@@ -82,11 +83,7 @@ namespace IrisMenus
 
         public void DoWindowBackground(Rect rect)
         {
-            if (Settings.Transparency <= 0f)
-            {
-                vanilla.DoWindowBackground(rect);
-                return;
-            }
+            if (Settings.Transparency <= 0f) pipeline?.ReleaseTargets();
             if (Event.current.type != EventType.Repaint) return;
             Color previous = GUI.color;
             try
@@ -94,14 +91,13 @@ namespace IrisMenus
                 Rect window = Owner.windowRect;
                 Rect uv = MenuLayout.BackgroundUv(window, UI.screenWidth, UI.screenHeight);
                 GUI.color = Color.white;
-                if (Settings.FrostEnabled && pipeline?.Texture != null && capturedFrame >= Time.frameCount - 1)
-                    GUI.DrawTextureWithTexCoords(rect, pipeline.Texture, uv);
+                if (Settings.Transparency > 0f && Settings.FrostEnabled && pipeline?.Texture != null && capturedFrame >= Time.frameCount - 1)
+                    GUI.DrawTexture(rect, pipeline.Crop(uv), ScaleMode.StretchToFill, true, 0f, Color.white, 0f, CornerRadius);
                 Color fill = Widgets.WindowBGFillColor;
                 fill.a = 1f - Settings.Transparency;
-                GUI.color = fill;
-                GUI.DrawTexture(rect, BaseContent.WhiteTex);
-                GUI.color = new Color(1f, 0.85f, 0.55f, 0.35f);
-                Widgets.DrawBox(rect);
+                GUI.DrawTexture(rect, BaseContent.WhiteTex, ScaleMode.StretchToFill, true, 0f, fill, 0f, CornerRadius);
+                Color border = new Color(fill.r * 0.55f, fill.g * 0.55f, fill.b * 0.55f, Mathf.Min(1f, fill.a * 1.6f));
+                GUI.DrawTexture(rect, BaseContent.WhiteTex, ScaleMode.StretchToFill, true, 0f, border, 1.5f, CornerRadius);
             }
             finally { GUI.color = previous; }
         }

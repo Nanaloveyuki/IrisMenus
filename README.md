@@ -121,10 +121,13 @@ Managed directory instead of NuGet reference assemblies. `validate.ps1
 
 The private `IWindowDrawing` implementation affects only IrisMenus. A command
 buffer on the active map/world camera captures its output after rendering;
-two half-resolution targets and a separable Gaussian shader generate the
-background. Strength changes reuse textures; resizing or changing cameras
-rebinds them. The window's footer provides live on/off, blur and transparency
-controls. Closing detaches the command buffer, unsubscribes camera callbacks,
+top-origin backbuffer captures are normalized before blurring. Two half-resolution
+targets and a separable Gaussian shader generate the background. The blur scratch
+target is reused for the window crop; the background, tint and border share the
+upstream's 12-unit rounded corners, including when frost is disabled. Strength
+changes reuse textures; resizing or changing cameras rebinds them. The footer
+provides live on/off, blur, transparency and remember-state controls.
+Closing detaches the command buffer, unsubscribes camera callbacks,
 and releases textures and material. The shader is borrowed from this mod's
 `Content.assetBundles.loadedAssetBundles`; RimWorld owns its loading/unloading.
 There is no duplicate bundle load and no CPU pixel readback in
@@ -133,10 +136,17 @@ the runtime path.
 Outside a rendered game scene (including the main menu), with no eligible
 camera, or after a shader-load failure, the window uses an unblurred translucent
 background. Transparency works independently of the frost switch; zero
-transparency restores the opaque native background.
+transparency uses an opaque rounded background.
 Turning the background off and on retries loading without restarting the game.
-Window geometry and the last selected page persist; the IrisMenus entry in
-the original mod settings dialog can reset window geometry.
+**Remember last page** is enabled by default in the window footer and the original
+IrisMenus settings dialog. It restores the page, global/owner search, result page,
+management filter, host scroll positions and registered Listing-page scrolling
+across reopen/restart. Explicitly opening a Mod's settings takes precedence over
+the saved view. Missing pages fall back to an available category of the same Mod,
+or the global catalog. Disabling memory clears host navigation state, not Mod
+settings, adapter selections or window geometry. Custom pages/adapters remain
+responsible for their own internal UI state. The original IrisMenus settings
+dialog can reset window geometry.
 
 ## Current Verification Boundary
 

@@ -11,6 +11,8 @@
   <IM_Frost>Frosted background</IM_Frost>
   <IM_Blur>Blur: {0}%</IM_Blur>
   <IM_Transparency>Transparency: {0}%</IM_Transparency>
+  <IM_RememberState>Remember last page</IM_RememberState>
+  <IM_RememberStateTip>Restore the last page, search, and scroll position. Mod settings themselves stay owned by each mod.</IM_RememberStateTip>
   <IM_Empty>No matching mod settings.</IM_Empty>
   <IM_Global>All settings</IM_Global>
   <IM_SearchGlobal>Search all settings</IM_SearchGlobal>

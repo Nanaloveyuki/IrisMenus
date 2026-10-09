@@ -12,10 +12,16 @@ namespace IrisMenus
         private string pendingFocus;
         private string highlighted;
         private float highlightUntil;
+        private float? restoredPosition;
         private readonly Dictionary<string, Rect> anchors = new Dictionary<string, Rect>();
         internal static MenuScrollView Active { get; private set; }
 
-        public void Reset() { position = Vector2.zero; }
+        public void Reset() { position = Vector2.zero; restoredPosition = null; }
+        internal float PositionY
+        {
+            get => restoredPosition ?? position.y;
+            set => restoredPosition = Mathf.Max(0f, MenuLayout.Finite(value, 0f));
+        }
 
         public void Focus(string anchorId)
         {
@@ -51,6 +57,11 @@ namespace IrisMenus
                 {
                     contentHeight = listing.CurHeight + 4f;
                     listing.End();
+                    if (restoredPosition.HasValue)
+                    {
+                        position.y = Mathf.Clamp(restoredPosition.Value, 0f, Mathf.Max(0f, contentHeight - viewport.height));
+                        restoredPosition = null;
+                    }
                 }
                 if (pendingFocus != null)
                 {
