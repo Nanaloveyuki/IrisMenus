@@ -169,7 +169,18 @@ settings, adapter selections or window geometry. Custom pages/adapters remain
 responsible for their own internal UI state. The original IrisMenus settings
 dialog can reset window geometry.
 
+The original IrisMenus settings dialog includes **Show IrisMenus button in the
+bottom bar**, enabled by default. Toggling it immediately hides/restores the
+bottom button and persists across restarts. When hidden, use **Options → Mod
+settings → IrisMenus → Open IrisMenus**; registered/hosted Mod entry routing is
+unaffected.
+
 ## Release notes
+
+### Unreleased
+
+- Add a default-on, persistent bottom-bar IrisMenus button visibility setting
+  in the original Mod settings dialog; keep the settings-page launcher available.
 
 ### 1.1.1
 

@@ -13,6 +13,8 @@
   <IM_Transparency>Transparency: {0}%</IM_Transparency>
   <IM_RememberState>Remember last page</IM_RememberState>
   <IM_RememberStateTip>Restore the last page, search, and scroll position. Mod settings themselves stay owned by each mod.</IM_RememberStateTip>
+  <IM_ShowMainButton>Show IrisMenus button in the bottom bar</IM_ShowMainButton>
+  <IM_ShowMainButtonTip>Takes effect immediately. When hidden, open IrisMenus from Options → Mod settings → IrisMenus → Open IrisMenus.</IM_ShowMainButtonTip>
   <IM_Empty>No matching mod settings.</IM_Empty>
   <IM_Global>All settings</IM_Global>
   <IM_SearchGlobal>Search all settings</IM_SearchGlobal>

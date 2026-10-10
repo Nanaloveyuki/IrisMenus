@@ -40,5 +40,10 @@ namespace RimWorld
         public Dialog_ModSettings(Verse.Mod mod) { this.mod = mod; }
         public Verse.Mod Owner => mod;
     }
-    public abstract class MainButtonWorker { public abstract void Activate(); }
+    public abstract class MainButtonWorker
+    {
+        public bool EngineVisible = true;
+        public virtual bool Visible => EngineVisible;
+        public abstract void Activate();
+    }
 }

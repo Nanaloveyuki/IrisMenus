@@ -14,6 +14,7 @@ internal static class Program
         Scrolling();
         BackgroundLifecycle();
         SettingsRoundTrip();
+        MainButtonVisibility();
         Routing();
         AdapterChecks.Run(Check);
         MarkdownChecks.Run(Check);
@@ -176,7 +177,7 @@ internal static class Program
         var original = new MenuSettings
         {
             Width = 920, Height = 640, X = 55, Y = 75, Blur = 0.8f,
-            Transparency = 0.4f, FrostEnabled = false, LastPage = "test:page"
+            Transparency = 0.4f, FrostEnabled = false, LastPage = "test:page", ShowMainButton = false
         };
         original.EnabledAdapters.Add("unloaded.mod:Settings");
         original.ExposeData();
@@ -188,6 +189,10 @@ internal static class Program
         Check(restored.Blur == 0.8f && restored.Transparency == 0.4f && !restored.FrostEnabled, "Appearance serialization contract");
         Check(restored.LastPage == "test:page", "Last-page serialization contract");
         Check(restored.RememberState, "Remember-state defaults on for legacy saves");
+        Check(!restored.ShowMainButton, "Hidden main button survives settings reload");
+        Scribe_Values.Data.Remove("showMainButton");
+        restored.ExposeData();
+        Check(restored.ShowMainButton, "Legacy settings retain a visible main button");
         Scribe_Values.Loading = false;
         original.RememberState = false;
         original.LastSubItems["owner"] = "owner:page";
@@ -213,6 +218,24 @@ internal static class Program
         Check(restored.Blur == 0.5f && restored.Transparency == 1f, "Invalid appearance values normalized");
         Scribe_Values.Loading = false;
     }
+
+    private static void MainButtonVisibility()
+    {
+        var settings = IrisMenusMod.Instance.Settings;
+        bool previous = settings.ShowMainButton;
+        var worker = new MainButtonWorker_IrisMenus();
+        try
+        {
+            settings.ShowMainButton = false;
+            Check(!worker.Visible, "Main button hides immediately when disabled");
+            settings.ShowMainButton = true;
+            Check(worker.Visible, "Same main button reappears immediately when enabled");
+            worker.EngineVisible = false;
+            Check(!worker.Visible, "User preference preserves engine visibility restrictions");
+        }
+        finally { settings.ShowMainButton = previous; }
+    }
+
 
     private static void Routing()
     {

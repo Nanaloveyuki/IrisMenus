@@ -13,6 +13,8 @@
   <IM_Transparency>透明度：{0}%</IM_Transparency>
   <IM_RememberState>记住上次页面</IM_RememberState>
   <IM_RememberStateTip>重新打开时恢复上次页面、搜索和滚动位置。各 Mod 自己的设置仍由该 Mod 保存。</IM_RememberStateTip>
+  <IM_ShowMainButton>显示底部 IrisMenus 按钮</IM_ShowMainButton>
+  <IM_ShowMainButtonTip>立即生效。隐藏后仍可通过“选项 → Mod 设置 → IrisMenus → 打开 IrisMenus”进入。</IM_ShowMainButtonTip>
   <IM_Empty>没有匹配的 Mod 设置。</IM_Empty>
   <IM_Global>全局选项</IM_Global>
   <IM_SearchGlobal>搜索全部设置</IM_SearchGlobal>

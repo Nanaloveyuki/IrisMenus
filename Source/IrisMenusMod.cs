@@ -33,10 +33,22 @@ namespace IrisMenus
             Rect rememberRect = new Rect(inRect.x, inRect.y + 88f, Mathf.Min(inRect.width, 320f), 28f);
             Widgets.CheckboxLabeled(rememberRect, "IM_RememberState".Translate(), ref remember);
             TooltipHandler.TipRegion(rememberRect, "IM_RememberStateTip".Translate());
-            if (remember == Settings.RememberState) return;
-            Settings.RememberState = remember;
-            if (!remember) Settings.ClearRememberedView();
-            WriteSettings();
+            bool changed = remember != Settings.RememberState;
+            if (changed)
+            {
+                Settings.RememberState = remember;
+                if (!remember) Settings.ClearRememberedView();
+            }
+            bool showButton = Settings.ShowMainButton;
+            Rect buttonRect = new Rect(inRect.x, inRect.y + 124f, Mathf.Min(inRect.width, 420f), 28f);
+            Widgets.CheckboxLabeled(buttonRect, "IM_ShowMainButton".Translate(), ref showButton);
+            TooltipHandler.TipRegion(buttonRect, "IM_ShowMainButtonTip".Translate());
+            if (showButton != Settings.ShowMainButton)
+            {
+                Settings.ShowMainButton = showButton;
+                changed = true;
+            }
+            if (changed) WriteSettings();
         }
     }
 
@@ -51,6 +63,7 @@ namespace IrisMenus
         internal float Blur = 0.5f;
         internal float Transparency = 0.65f;
         internal bool RememberState = true;
+        internal bool ShowMainButton = true;
         internal string LastPage;
         internal Dictionary<string, string> LastSubItems = new Dictionary<string, string>();
         internal Dictionary<string, string> HostView = new Dictionary<string, string>();
@@ -67,6 +80,7 @@ namespace IrisMenus
             Scribe_Values.Look(ref Transparency, "transparency", 0.65f);
             Scribe_Values.Look(ref LastPage, "lastPage");
             Scribe_Values.Look(ref RememberState, "rememberState", true);
+            Scribe_Values.Look(ref ShowMainButton, "showMainButton", true);
             Scribe_Collections.Look(ref LastSubItems, "lastSubItems", LookMode.Value, LookMode.Value);
             Scribe_Collections.Look(ref HostView, "hostView", LookMode.Value, LookMode.Value);
             if (EnabledAdapters == null) EnabledAdapters = new List<string>();
@@ -87,6 +101,7 @@ namespace IrisMenus
 
     public sealed class MainButtonWorker_IrisMenus : MainButtonWorker
     {
+        public override bool Visible => base.Visible && (IrisMenusMod.Instance?.Settings.ShowMainButton ?? true);
         public override void Activate() => MenuRegistry.Open();
     }
 }
