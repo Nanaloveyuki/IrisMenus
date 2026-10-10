@@ -50,7 +50,12 @@ namespace Verse
         public static void Error(string text) { Errors.Add(text); }
         public static void Warning(string text) { Errors.Add(text); }
     }
-    public static class LanguageDatabase { public static object activeLanguage; }
+    public sealed class LoadedLanguage
+    {
+        public string folderName;
+        public LoadedLanguage(string folderName) { this.folderName = folderName; }
+    }
+    public static class LanguageDatabase { public static LoadedLanguage activeLanguage; }
     public static class Find
     {
         public static WindowStack WindowStack = new WindowStack();
@@ -121,6 +126,7 @@ namespace Verse
     public static class Text
     {
         public static float CalcHeight(string text, float width) => text == null ? 0f : text.Length;
+        public static UnityEngine.Vector2 CalcSize(string text) => new UnityEngine.Vector2 { x = text == null ? 0f : text.Length, y = 1f };
     }
     public static class TooltipHandler
     {

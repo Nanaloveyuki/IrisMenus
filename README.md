@@ -54,6 +54,27 @@ instances with a nonempty `SettingsCategory()` are listed. Selection persists
 by package ID and full Mod type name; unloaded selections remain stored.
 Explicitly registered owners take precedence over adapters.
 
+The list includes aspect-fit ModIcons, with RimWorld's default icon for packages
+without custom icons, and wraps long names without overlapping the checkbox.
+
+### Language-specific Mod names
+
+From 1.1.1, mods and translation packs can register names for themselves or
+another package without changing `About.xml` or patching `Content.Name`:
+
+```csharp
+MenuRegistry.RegisterModNameAlias(this, "English", "My Mod");
+MenuRegistry.RegisterModNameAlias("author.targetmod", "English", "Hunger and Havoc");
+```
+
+Use RimWorld language folder names (`English`, `ChineseSimplified`, etc.).
+`ModContentPack` is also accepted. Same-package/language registrations are
+last-wins and case-insensitive. Unregistered languages retain the original
+name; explicit category titles and persistent IDs do not change. Navigation,
+manual-hosting titles and search paths use the current alias; searches also
+match the original name. `MenuRegistry.GetModDisplayName(Mod|ModContentPack)`
+exposes the same resolution for consumers. See both guides for full contracts.
+
 A narrow Harmony prefix on `WindowStack.Add` redirects an exact
 `Dialog_ModSettings` instance only when its owner registered a page or the
 user selected that owner for hosting. Existing IrisMenus windows are reused.
@@ -147,6 +168,18 @@ or the global catalog. Disabling memory clears host navigation state, not Mod
 settings, adapter selections or window geometry. Custom pages/adapters remain
 responsible for their own internal UI state. The original IrisMenus settings
 dialog can reset window geometry.
+
+## Release notes
+
+### 1.1.1
+
+- Add language-specific Mod name aliases, including translation-pack registration
+  for other package IDs, and a shared display-name lookup.
+- Show cached ModIcons in the add-mod-settings list; reserve icon/checkbox space
+  when measuring wrapped names. Search matches localized and original names.
+- Publish atomic dynamic SubItem listing replacement and per-content Mod actions,
+  including action-only launcher pages.
+
 
 ## Current Verification Boundary
 

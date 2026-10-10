@@ -4,6 +4,7 @@
     <OutputType>Library</OutputType>
     <RootNamespace>IrisMenus</RootNamespace>
     <AssemblyName>IrisMenus</AssemblyName>
+    <Version>1.1.1</Version>
     <LangVersion>latest</LangVersion>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <OutputPath>../1.6/Assemblies/</OutputPath>

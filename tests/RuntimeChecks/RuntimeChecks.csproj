@@ -5,6 +5,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="../../Source/MenuRegistry.cs" Link="Production/MenuRegistry.cs" />
+    <Compile Include="../../Source/MenuOwnerActions.cs" Link="Production/MenuOwnerActions.cs" />
     <Compile Include="../../Source/MenuSession.cs" Link="Production/MenuSession.cs" />
     <Compile Include="../../Source/MenuScrollView.cs" Link="Production/MenuScrollView.cs" />
     <Compile Include="../../Source/MenuLayout.cs" Link="Production/MenuLayout.cs" />

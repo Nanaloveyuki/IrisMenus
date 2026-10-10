@@ -27,4 +27,7 @@
   <IM_PageFailed>This settings page could not be displayed.</IM_PageFailed>
   <IM_Retry>Retry</IM_Retry>
   <IM_OperationFailed>IrisMenus could not complete the operation. See the log for details.</IM_OperationFailed>
+  <IM_OwnerActions>Mod actions</IM_OwnerActions>
+  <IM_ActionUnavailable>This action is not available right now.</IM_ActionUnavailable>
+  <IM_ActionFailed>The action could not be completed. See the log for details.</IM_ActionFailed>
 </LanguageData>

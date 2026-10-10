@@ -19,6 +19,9 @@ namespace IrisMenusApiConsumer
         public ExampleMod(ModContentPack content) : base(content)
         {
             settings = GetSettings<ExampleSettings>();
+            MenuRegistry.RegisterModNameAlias(this, "English", "Example Mod");
+            MenuRegistry.RegisterModNameAlias(content, "ChineseSimplified", "示例 Mod");
+            MenuRegistry.RegisterModNameAlias("example.othermod", "English", "Other Mod");
             MenuRegistry.RegisterSubItemListing(this, "general", () => "General", Draw);
             MenuRegistry.RegisterSearchProvider(this, "general", () => new[]
             {
@@ -36,6 +39,16 @@ namespace IrisMenusApiConsumer
                 new MenuSearchEntry("advanced", () => "Advanced options")
                 }, sections.Focus);
             MenuRegistry.RegisterSubItem(this, "markdown", () => "Markdown", dynamicMarkdown.Draw);
+            MenuRegistry.ReplaceSubItemListings(this, "dynamic", new[]
+            {
+                new MenuSubItemListing("generated", () => "Generated", Draw, searchProvider: () => new[]
+                {
+                    new MenuSearchEntry("generated", () => "Generated")
+                })
+            });
+            MenuOwnerActions.RegisterOwnerAction(this, "reload", () => "Reload", () => { },
+                visible: () => true, enabled: () => settings.Enabled, confirmation: () => "Reload now?");
+            MenuOwnerActions.RegisterOwnerAction(content, "export", () => "Export", () => { });
         }
 
         private void Draw(Listing_Standard listing)

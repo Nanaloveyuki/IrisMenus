@@ -19,8 +19,10 @@ namespace IrisMenus
             Anchor = anchor;
             Title = title;
             Context = context ?? "";
-            Path = page.Owner.Content.Name + " / " + page.DisplayTitle;
+            string modName = page.DisplayModName;
+            Path = modName + " / " + page.DisplayTitle;
             Text = Title + " " + Context + " " + keywords + " " + Path;
+            if (modName != page.Owner.Content.Name) Text += " " + page.Owner.Content.Name;
         }
     }
 
@@ -64,6 +66,7 @@ namespace IrisMenus
                     if (current == null)
                     {
                         current = pages[pageCursor++];
+                        if (current.ActionLauncher) { current = null; continue; }
                         entryIds.Clear();
                         records.Add(new MenuSearchHit(current, null, current.DisplayTitle, "", ""));
                         entries = current.SearchProvider?.Invoke()?.GetEnumerator();

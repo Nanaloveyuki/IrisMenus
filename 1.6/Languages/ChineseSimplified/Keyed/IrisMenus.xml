@@ -27,4 +27,7 @@
   <IM_PageFailed>无法显示此设置页面。</IM_PageFailed>
   <IM_Retry>重试</IM_Retry>
   <IM_OperationFailed>IrisMenus 未能完成操作，详情请查看日志。</IM_OperationFailed>
+  <IM_OwnerActions>Mod 操作</IM_OwnerActions>
+  <IM_ActionUnavailable>此操作当前不可用。</IM_ActionUnavailable>
+  <IM_ActionFailed>操作未能完成，详情请查看日志。</IM_ActionFailed>
 </LanguageData>

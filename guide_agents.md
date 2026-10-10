@@ -4,7 +4,8 @@
 
 - Target RimWorld 1.6, .NET Framework 4.8, namespace `IrisMenus`. Require Harmony and package `Nanaloveyuki.IrisMenus`; no RimIris dependency.
 - Reference IrisMenus.dll with `Private=false`. Never ship a duplicate DLL in a consumer. Declare the mod dependency and load the provider before the consumer.
-- Run registration, invalidation, focus and rendering on the game thread. Register once, normally after `GetSettings<T>()` in the Mod constructor. No unregister/replace-page API exists.
+- Run registration, invalidation, focus and rendering on the game thread. Register static pages once, normally after `GetSettings<T>()` in the Mod constructor. Dynamically declared SubItem listings may be replaced atomically; there is no general unregister API.
+
 - Consumer owns settings and persistence. The host neither serializes consumer values nor supports rollback. Preserve existing settings keys and save semantics.
 - Do not patch other mods, scan private fields, or invoke drawing to discover settings. Manual adapter opt-in remains a user decision.
 
@@ -19,12 +20,28 @@ MenuRegistry.RegisterSubItem(Mod owner, string pageId, Func<string> title,
     Action<Rect> draw, Action save = null);
 MenuRegistry.RegisterSubItemListing(Mod owner, string pageId, Func<string> title,
     Action<Listing_Standard> draw, Action save = null);
+MenuRegistry.ReplaceSubItemListings(Mod owner, string registrationId,
+    IEnumerable<MenuSubItemListing> listings);
+
 MenuRegistry.RegisterSearchProvider(Mod owner, string pageId,
     Func<IEnumerable<MenuSearchEntry>> provider, Action<string> focus = null);
 MenuRegistry.RegisterAdapterSearch(Mod owner,
     Func<IEnumerable<MenuSearchEntry>> provider, Action<string> focus = null);
 MenuRegistry.InvalidateSearchIndex();
 MenuRegistry.Open();
+MenuRegistry.RegisterOwnerAction(Mod owner, string id, Func<string> label, Action execute,
+    Func<bool> visible = null, Func<bool> enabled = null, Func<string> confirmation = null);
+MenuRegistry.RegisterOwnerAction(ModContentPack owner, string id, Func<string> label, Action execute,
+    Func<bool> visible = null, Func<bool> enabled = null, Func<string> confirmation = null);
+
+MenuRegistry.RegisterModNameAlias(Mod owner, string language, string alias);
+MenuRegistry.RegisterModNameAlias(ModContentPack content, string language, string alias);
+MenuRegistry.RegisterModNameAlias(string packageId, string language, string alias);
+string name = MenuRegistry.GetModDisplayName(Mod owner);
+string name = MenuRegistry.GetModDisplayName(ModContentPack content);
+
+new MenuSubItemListing(string pageId, Func<string> title, Action<Listing_Standard> draw,
+    Action save = null, Func<IEnumerable<MenuSearchEntry>> searchProvider = null);
 
 new MenuSearchEntry(string id, Func<string> title,
     Func<string> keywords = null, Func<string> context = null);
@@ -60,10 +77,20 @@ These are invocation/signature summaries, not a standalone compilable file. See 
 
 - Owner identity is `Content.PackageIdPlayerFacing + ":" + GetType().FullName`; page identity appends `":" + pageId`. Keep IDs and owner type stable across versions. Renaming loses remembered navigation unless separately migrated.
 - Registration rejects null owner/title/draw and blank page ID; duplicate full page ID throws. Search declarations require an already registered page. Re-declaring a provider replaces its metadata provider and increments the registry revision.
+- `ReplaceSubItemListings` is scoped by owner identity plus `registrationId`. It validates the whole set, including nulls, blank registration/page IDs, duplicate IDs, and collisions with pages not owned by that registration, before changing the registry. An empty list removes only that registration. Stable page IDs keep their `MenuPage` and listing scroll object while title, draw, save and search callbacks update. Save defaults to `owner.WriteSettings`. Each successful replacement increments the registry revision once. An open window refresh keeps a same-ID page selected; a removed selection first falls back to the nearest declaration position in the same registration, then another page of that owner or the global catalog. Removed pages are no longer drawn.
+
 - All pages of an owner group together when there are multiple pages. A single legacy page opens directly; a single explicit SubItem retains a parent heading. Mixed legacy/SubItem registrations share one group.
 - Only the selected owner expands. Selecting the owner heading restores its last page, falling back to the first available page when removed. With default-on Remember last page, `LastSubItems`, `LastPage` and the host view persist through host settings. Disabling memory clears host navigation and opens the global catalog next time; geometry, appearance and consumer values are unaffected.
 - The global catalog is a directory of pages plus declared settings, not a combined settings editor. Search scope is all hosted pages or all categories of the selected owner.
 - Opening a search hit retains the original search scope, query, result-page index and scroll. Back returns to those results. Explicit navigation clears the query and resets result pagination. With memory enabled, reopen/restart also restores search/management mode, host scroll positions, compact navigation visibility and registered Listing scrolling. Explicit Mod entry routing takes precedence over saved search state. Custom/adapted page state remains consumer-owned.
+
+## Localized Mod names (1.1.1)
+
+- Register once on the game thread. `language` is `LoadedLanguage.folderName`, e.g. `English` or `ChineseSimplified`, not a locale code or friendly name. The package-ID overload lets translation mods name another package before its Mod handle exists. Mod/content overloads use `PackageIdPlayerFacing`.
+- Package IDs and language keys compare with `OrdinalIgnoreCase`. Registration trims inputs and rejects null/whitespace IDs, languages or aliases. Last registration wins for the same package/language; unrelated languages remain intact. Changed registrations increment the registry revision; identical re-registration does not rebuild the index.
+- `GetModDisplayName(Mod|ModContentPack)` returns the active language alias, otherwise `Content.Name`, including before language initialization. No cross-language fallback. It never mutates the game content name, metadata, stable IDs or persisted settings; aliases live in memory for this process only. Alias registration does not opt a Mod into hosting.
+- Owner headings, single-page Mod navigation, adapted page titles, action-only launcher titles, tooltips, search scope and result paths use localized names. Explicit native category titles remain unchanged; a blank/failing title or one equal to the raw Mod name resolves to the localized name. Search matches both the current alias and original name. An open window refreshes on alias revision or active-language object changes.
+- The add-mod-settings list draws `Content.ModMetaData.Icon`, using the game's cached ModIcon/custom-path/default-icon logic; IrisMenus does not load or own additional textures. A 32-unit aspect-fit icon occupies a fixed 40-unit column. Only visible rows request icons; wrapped row heights reserve both that column and the checkbox area.
 
 ## Metadata and incremental work
 
@@ -104,13 +131,19 @@ These are invocation/signature summaries, not a standalone compilable file. See 
 - Save defaults to `owner.WriteSettings`. Leaving a different page, returning from a search hit, and normal close save; save errors are logged, surfaced and block navigation/close for retry. Same-page selection is a no-op. Forced window removal can only attempt saving, not veto removal.
 - Drawing exceptions log and enter a retry view; `ExitGUIException` propagates as required by IMGUI. Save still runs after draw failure. Consumer-unbalanced IMGUI groups cannot be reliably repaired by the host.
 - Focus errors are reported after destination selection; the destination remains selected. Fix the ID/callback rather than suppressing diagnostics.
+
+- `RegisterOwnerAction` is generic and stores no consumer state. `Mod` and `ModContentPack` registrations for the same content reference share one owner key: `PackageIdPlayerFacing + ":" + RootDir`. Re-registering the same owner key and action ID replaces callbacks and increments the registry revision once. Register on the game thread, not during draw.
+- Actions render in a wrapping strip above the selected owner's page. The global catalog has no selected owner and shows no strip. Click time rechecks `visible` and `enabled`; a nonblank confirmation opens `Dialog_MessageBox` before execute and rechecks again on accept. Blank confirmation runs immediately. Callback exceptions are logged and surfaced; they do not close the window or stop a consumer session.
+- A content pack with actions but no settings page gets one stable action-only launcher, ID `content-owner-key:actions`. It is not a native settings page: `HasPages` stays false, manual adapter opt-in remains available, and the launcher is omitted from search and from expanded settings children. Its backing object is a private `MenuActionOwner` and is never added to `LoadedModManager`. If that content later has a real Mod handle, the launcher adopts it and stays in the same group.
+
 - Title callback errors log once for that page object and fall back to owner name. Do not depend on callback evaluation order or frequency.
 
 ## Diagnosis and validation
 
 | Symptom | Check / correction |
 | --- | --- |
-| Duplicate page exception | Move registration out of Draw; ensure unique stable page IDs. |
+| Duplicate page exception | Move registration out of Draw; ensure unique stable page IDs. For a dynamic SubItem set, call `ReplaceSubItemListings` with one registration ID instead of registering again. |
+
 | Search provider cannot find page | Register page first; use same owner identity and exact page ID. |
 | No setting-level results | Supply metadata; wait for incremental completion; confirm owner scope and adapter opt-in. |
 | Stale translated/dynamic text | Use text callbacks; invalidate after non-language changes, never each frame. |

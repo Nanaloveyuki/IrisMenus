@@ -18,6 +18,7 @@ internal static class Program
         AdapterChecks.Run(Check);
         MarkdownChecks.Run(Check);
         CatalogChecks.Run(Check);
+        ModNameChecks.Run(Check);
         Console.WriteLine("PASS: " + assertions + " runtime assertions (engine doubles; no game rendering).");
     }
 

@@ -122,8 +122,114 @@ internal static class CatalogChecks
         reloaded.Reset(); reloaded.Draw(restoredViewport, list => list.CurHeight = 1000);
         check(Widgets.LastPosition.y == 0f, "Disabled memory resets visible listing scroll");
         Anchors(check);
+        ReplaceableListings(check);
         Sections(check);
     }
+
+    private static void ReplaceableListings(Action<bool, string> check)
+    {
+        var owner = new Mod { Content = new ModContentPack { PackageIdPlayerFacing = "catalog.replace", Name = "Replace" } };
+        var other = new Mod { Content = new ModContentPack { PackageIdPlayerFacing = "catalog.other", Name = "Other" } };
+        int draws = 0, saves = 0;
+        MenuRegistry.RegisterSubItemListing(other, "kept", () => "Kept", _ => draws++);
+        MenuRegistry.Register(owner, "manual", () => "Manual", _ => draws++);
+        MenuPage otherPage = MenuRegistry.Registered.Single(page => ReferenceEquals(page.Owner, other));
+        MenuPage manual = MenuRegistry.Registered.Single(page => page.Id.EndsWith(":manual"));
+        int revision = MenuRegistry.Revision;
+        int before = MenuRegistry.Registered.Count();
+        Action<Listing_Standard> stale = _ => draws += 100;
+        try
+        {
+            MenuRegistry.ReplaceSubItemListings(owner, "dsl", new[]
+            {
+                new MenuSubItemListing("general", () => "General", stale),
+                new MenuSubItemListing("general", () => "Duplicate", _ => draws++)
+            });
+            check(false, "Duplicate replacement IDs throw");
+        }
+        catch (ArgumentException) { check(true, "Duplicate replacement IDs throw"); }
+        check(MenuRegistry.Revision == revision && MenuRegistry.Registered.Count() == before, "Invalid replacement does not mutate registry");
+        try
+        {
+            MenuRegistry.ReplaceSubItemListings(owner, "dsl", new[]
+            {
+                new MenuSubItemListing("manual", () => "Collision", _ => draws++)
+            });
+            check(false, "Replacement cannot take a page outside its registration");
+        }
+        catch (ArgumentException) { check(true, "Replacement cannot take a page outside its registration"); }
+        check(ReferenceEquals(MenuRegistry.Registered.Single(page => page.Id.EndsWith(":manual")), manual), "Rejected collision keeps the original page");
+
+        MenuRegistry.ReplaceSubItemListings(owner, "dsl", new[]
+        {
+            new MenuSubItemListing("general", () => "General", stale, () => saves++, () => new[] { new MenuSearchEntry("old", () => "Old") }),
+            new MenuSubItemListing("advanced", () => "Advanced", _ => draws++)
+        });
+        var owned = MenuRegistry.Registered.Where(page => ReferenceEquals(page.Owner, owner) && page.IsSubItem).ToList();
+        MenuPage general = owned.Single(page => page.Id.EndsWith(":general"));
+        MenuPage advanced = owned.Single(page => page.Id.EndsWith(":advanced"));
+        check(MenuRegistry.Revision == revision + 1, "Successful replacement increments revision once");
+        check(ReferenceEquals(MenuRegistry.Registered.Single(page => ReferenceEquals(page.Owner, other)), otherPage), "Other registrations stay registered");
+        general.ListingScroll.PositionY = 180f;
+        int updatedSaves = 0;
+        MenuRegistry.ReplaceSubItemListings(owner, "dsl", new[]
+        {
+            new MenuSubItemListing("general", () => "Updated", _ => draws++, () => updatedSaves++),
+            new MenuSubItemListing("extra", () => "Extra", _ => draws++)
+        });
+        MenuPage updated = MenuRegistry.Registered.Single(page => page.Id == general.Id);
+        check(ReferenceEquals(updated, general) && ReferenceEquals(updated.ListingScroll, general.ListingScroll), "Stable page retains page and listing scroll");
+        check(updated.ListingScroll.PositionY == 180f && updated.DisplayTitle == "Updated", "Retained page keeps scroll and updates callbacks");
+        updated.Save();
+        check(updatedSaves == 1 && saves == 0, "Updated save replaces the previous callback");
+        check(MenuRegistry.Registered.All(page => page.Id != advanced.Id), "Omitted page is removed");
+        check(MenuRegistry.Registered.Count(page => page.Id.EndsWith(":extra")) == 1, "Replacement adds the new page once");
+        var openPages = MenuRegistry.Registered.Where(page => ReferenceEquals(page.Owner, owner) || ReferenceEquals(page.Owner, other)).ToList();
+        MenuPage fallback = MenuSession.ResolveReplacement(advanced, openPages);
+        MenuPage retained = MenuSession.ResolveReplacement(general, openPages);
+        check(fallback != null && fallback.Id.EndsWith(":extra") && ReferenceEquals(fallback.Owner, owner), "Removed selection falls back within the same registration");
+
+        check(ReferenceEquals(retained, general), "Same page ID remains selected");
+        check(MenuSession.ResolveReplacement(otherPage, openPages.Where(page => !ReferenceEquals(page, otherPage)).ToList()) == null, "Removing the last owner page clears selection");
+        MenuRegistry.ReplaceSubItemListings(owner, "dsl", new MenuSubItemListing[0]);
+        check(!MenuRegistry.Registered.Any(page => ReferenceEquals(page.Owner, owner) && (page.Id == general.Id || page.Id.EndsWith(":extra"))), "Empty replacement removes this registration");
+        check(MenuRegistry.Registered.Any(page => page.Id == manual.Id), "Empty replacement does not remove unrelated pages");
+        OwnerActions(check);
+
+    }
+    private static void OwnerActions(Action<bool, string> check)
+    {
+        var pack = new ModContentPack { PackageIdPlayerFacing = "actions.pack", Name = "Actions", RootDir = "actions-root" };
+        var settings = new Mod { Content = pack };
+        MenuRegistry.RegisterOwnerAction(pack, "edit", () => "Edit", () => { });
+        MenuPage launcher = MenuRegistry.Registered.Single(page => page.ActionLauncher && ReferenceEquals(page.Owner.Content, pack));
+        check(launcher.Id == MenuOwnerActions.ContentOwnerId(pack) + ":actions", "Content-only pack gets a stable action launcher");
+        check(!MenuRegistry.HasPages(settings), "Action launcher does not count as native settings");
+        LoadedModManager.ModHandles.Add(settings);
+        check(MenuRegistry.Adaptable().Any(page => ReferenceEquals(page.Owner, settings)), "Settings adapter stays available beside an action launcher");
+        MenuRegistry.AdoptActionOwners();
+        check(ReferenceEquals(launcher.Owner, settings), "Launcher adopts the real mod handle for the same content pack");
+        MenuRegistry.Register(settings, "general", () => "General", _ => { });
+        var owned = MenuRegistry.Registered.Where(page => ReferenceEquals(page.Owner.Content, pack)).ToList();
+        check(owned.Count(page => page.ActionLauncher) == 1 && MenuRegistry.HasPages(settings), "Settings registration keeps the existing launcher");
+        var rows = MenuNavigation.Build(owned, settings, new Dictionary<string, string>());
+        check(rows.Any(row => row.OwnerHeader) && rows.Count(row => row.Child && !row.Page.ActionLauncher) == 1 && rows.All(row => !row.ActionOnly), "Settings and actions share one group without listing the launcher as a settings page");
+        MenuOwnerAction edit = MenuOwnerActions.For(launcher).Single(action => action.Id == "edit");
+        using (var catalog = new MenuCatalog(owned))
+        {
+            while (catalog.Pending) catalog.Advance();
+            check(catalog.Results.All(hit => !hit.Page.ActionLauncher) && catalog.Results.Any(hit => hit.Page.Id.EndsWith(":general")), "Action launcher is excluded from search while the settings page remains");
+        }
+        MenuRegistry.RegisterOwnerAction(pack, "edit", () => "Edit again", () => { });
+        MenuOwnerAction replaced = MenuOwnerActions.For(launcher).Single(action => action.Id == "edit");
+        check(!ReferenceEquals(replaced, edit) && MenuOwnerActions.For(launcher).Count(action => action.Id == "edit") == 1, "Same action id replaces the previous registration");
+        var only = new ModContentPack { PackageIdPlayerFacing = "actions.only", Name = "Only", RootDir = "only-root" };
+        MenuRegistry.RegisterOwnerAction(only, "open", () => "Open", () => { });
+        MenuPage onlyPage = MenuRegistry.Registered.Single(page => ReferenceEquals(page.Owner.Content, only));
+        var onlyRows = MenuNavigation.Build(new[] { onlyPage }, null, new Dictionary<string, string>());
+        check(onlyRows.Count == 1 && onlyRows[0].ActionOnly && onlyRows[0].OwnerHeader, "Action-only content keeps one non-settings header");
+    }
+
 
     private static IEnumerable<MenuSearchEntry> Entries(int count, Action next, Action dispose)
     {

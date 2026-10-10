@@ -44,6 +44,8 @@ namespace IrisMenus
             closeOnAccept = false;
             closeOnClickedOutside = false;
             requestedPage = requested;
+            MenuRegistry.AdoptActionOwners();
+            MenuOwnerActions.EnsureLaunchers();
             adapters = MenuRegistry.Adaptable();
             pages = MenuRegistry.Registered.Concat(Hosted()).ToList();
             RestoreOpeningState();
@@ -306,7 +308,7 @@ namespace IrisMenus
                     GUI.color = entry.Child ? MenuControls.Accent : Color.white;
                     Widgets.Label(label, entry.Title);
                     GUI.color = Color.white;
-                    TooltipHandler.TipRegion(row, entry.Page.Owner.Content.Name);
+                    TooltipHandler.TipRegion(row, entry.Page.DisplayModName);
                     bool clicked = Widgets.RadioButton(row.xMax - 24f, row.y + (rowHeight - 24f) / 2f, selected);
                     if (clicked || Widgets.ButtonInvisible(row)) Select(entry.Page);
                     y += rowHeight;
@@ -315,7 +317,7 @@ namespace IrisMenus
             finally { Widgets.EndScrollView(); }
         }
 
-        private static float RowHeight(MenuPage page, float width) => Mathf.Max(32f, Text.CalcHeight(page.DisplayTitle, Mathf.Max(1f, width - 12f)) + 8f);
+        private static float RowHeight(MenuPage page, float width) => Mathf.Max(40f, Text.CalcHeight(page.DisplayTitle, Mathf.Max(1f, width - 12f)) + 8f);
         private static float NavigationHeight(MenuNavEntry entry, float width) => Mathf.Max(32f,
             Text.CalcHeight(entry.Title, Mathf.Max(1f, width - (entry.Child ? 58f : 40f))) + 8f);
 
@@ -323,10 +325,11 @@ namespace IrisMenus
         {
             var filtered = adapters.Where(page => !MenuRegistry.HasPages(page.Owner) &&
                 (page.DisplayTitle.IndexOf(browse.Query, StringComparison.CurrentCultureIgnoreCase) >= 0 ||
+                 page.DisplayModName.IndexOf(browse.Query, StringComparison.CurrentCultureIgnoreCase) >= 0 ||
                  page.Owner.Content.Name.IndexOf(browse.Query, StringComparison.CurrentCultureIgnoreCase) >= 0)).ToList();
             Rect viewport = rect;
             float width = viewport.width - 20f;
-            float height = filtered.Sum(page => RowHeight(page, width - 28f));
+            float height = filtered.Sum(page => RowHeight(page, width - 68f));
             if (filtered.Count == 0)
             {
                 Widgets.Label(viewport, "IM_Empty".Translate());
@@ -340,10 +343,16 @@ namespace IrisMenus
                 {
                     bool enabled = Settings.EnabledAdapters.Contains(page.Id);
                     bool previous = enabled;
-                    float rowHeight = RowHeight(page, width - 28f);
+                    float rowHeight = RowHeight(page, width - 68f);
                     Rect row = new Rect(0f, y, width, rowHeight);
-                    Widgets.CheckboxLabeled(row, page.DisplayTitle, ref enabled);
-                    TooltipHandler.TipRegion(row, page.Owner.Content.Name);
+                    if (row.Overlaps(new Rect(0f, adapterScroll.y, width, viewport.height)))
+                    {
+                        Texture2D icon = page.Owner.Content.ModMetaData?.Icon;
+                        if (icon != null) GUI.DrawTexture(new Rect(0f, y + (rowHeight - 32f) / 2f, 32f, 32f), icon, ScaleMode.ScaleToFit);
+                    }
+                    Rect checkbox = new Rect(40f, y, Mathf.Max(1f, width - 40f), rowHeight);
+                    Widgets.CheckboxLabeled(checkbox, page.DisplayTitle, ref enabled);
+                    TooltipHandler.TipRegion(row, page.DisplayModName);
                     if (previous != enabled)
                     {
                         if (enabled) Settings.EnabledAdapters.Add(page.Id);
@@ -358,17 +367,95 @@ namespace IrisMenus
 
         private void DrawSelected(Rect rect)
         {
+            float strip = DrawOwnerActions(rect);
+            Rect page = new Rect(rect.x, rect.y + strip, rect.width, Mathf.Max(1f, rect.height - strip));
             if (session.DrawFailed)
             {
-                Widgets.Label(new Rect(rect.x, rect.y, rect.width, 56f), "IM_PageFailed".Translate());
-                if (Widgets.ButtonText(new Rect(rect.x, rect.y + 64f, Mathf.Min(160f, rect.width), 30f), "IM_Retry".Translate())) session.Retry();
+                Widgets.Label(new Rect(page.x, page.y, page.width, 56f), "IM_PageFailed".Translate());
+                if (Widgets.ButtonText(new Rect(page.x, page.y + 64f, Mathf.Min(160f, page.width), 30f), "IM_Retry".Translate())) session.Retry();
                 return;
             }
             var state = new GuiState();
-            GUI.BeginGroup(rect);
-            try { session.Draw(new Rect(0f, 0f, rect.width, rect.height)); }
+            GUI.BeginGroup(page);
+            try { session.Draw(new Rect(0f, 0f, page.width, page.height)); }
             finally { GUI.EndGroup(); state.Restore(); }
         }
+
+        private float DrawOwnerActions(Rect rect)
+        {
+            List<MenuOwnerAction> actions = MenuOwnerActions.For(session.Selected);
+            const float height = 30f;
+            const float gap = 8f;
+            float x = rect.x;
+            float y = rect.y + 20f;
+            float row = 0f;
+            bool previous = GUI.enabled;
+            bool any = false;
+            try
+            {
+                for (int i = 0; i < actions.Count; i++)
+                {
+                    MenuOwnerAction action = actions[i];
+                    if (!action.IsVisible()) continue;
+                    if (!any)
+                    {
+                        Widgets.Label(new Rect(rect.x, rect.y, rect.width, 18f), "IM_OwnerActions".Translate());
+                        any = true;
+                        row = 20f + height;
+                    }
+                    string label = action.DisplayLabel();
+                    float width = Mathf.Clamp(Text.CalcSize(label).x + 24f, 96f, Mathf.Max(96f, rect.width));
+                    if (x > rect.x && x + width > rect.xMax)
+                    {
+                        x = rect.x;
+                        y += height + gap;
+                        row += height + gap;
+                    }
+                    bool enabled = action.IsEnabled();
+                    GUI.enabled = previous && enabled;
+                    bool clicked = Widgets.ButtonText(new Rect(x, y, Mathf.Min(width, rect.width), height), label);
+                    if (clicked && enabled) Activate(action);
+                    x += width + gap;
+                }
+            }
+            finally { GUI.enabled = previous; }
+            return any ? row + gap : 0f;
+        }
+
+        private static void Activate(MenuOwnerAction action)
+        {
+            if (!action.IsVisible() || !action.IsEnabled())
+            {
+                Messages.Message("IM_ActionUnavailable".Translate(), MessageTypeDefOf.RejectInput, false);
+                return;
+            }
+            string confirmation;
+            try { if (!action.TryConfirmText(out confirmation)) return; }
+            catch (Exception exception)
+            {
+                Log.Error("[IrisMenus] Owner action confirmation failed for " + action.OwnerKey + ":" + action.Id + ": " + exception);
+                Messages.Message("IM_ActionFailed".Translate(), MessageTypeDefOf.RejectInput, false);
+                return;
+            }
+            if (!string.IsNullOrWhiteSpace(confirmation))
+            {
+                Find.WindowStack.Add(Dialog_MessageBox.CreateConfirmation(confirmation, () => Run(action)));
+                return;
+            }
+            Run(action);
+        }
+
+        private static void Run(MenuOwnerAction action)
+        {
+            if (!action.IsVisible() || !action.IsEnabled()) return;
+            try { action.Execute(); }
+            catch (Exception exception)
+            {
+                Log.Error("[IrisMenus] Failed to run " + action.OwnerKey + ":" + action.Id + ": " + exception);
+                Messages.Message("IM_ActionFailed".Translate(), MessageTypeDefOf.RejectInput, false);
+            }
+        }
+
 
         private void Select(MenuPage page)
         {
@@ -406,14 +493,33 @@ namespace IrisMenus
         private void RefreshCatalog()
         {
             catalog?.Dispose();
+            MenuRegistry.AdoptActionOwners();
             adapters = MenuRegistry.Adaptable();
             pages = MenuRegistry.Registered.Concat(Hosted()).ToList();
+            RebindSelection();
             catalog = new MenuCatalog(pages);
             catalog.Query(browse.Query, browse.Scope);
             catalogRevision = MenuRegistry.Revision;
             catalogLanguage = LanguageDatabase.activeLanguage;
             catalogFrame = -1;
             RebuildNavigation();
+        }
+
+        private void RebindSelection()
+        {
+            MenuPage selected = session.Selected;
+            MenuPage current = MenuSession.ResolveReplacement(selected, pages);
+            if (ReferenceEquals(current, selected)) return;
+            session.Rebind(current);
+            if (browse.Managing) return;
+            if (current == null)
+            {
+                browse.Navigate(null);
+                return;
+            }
+            if (selected != null && selected.Id == current.Id) return;
+            if (browse.ViewingTarget || browse.ShowResults) return;
+            browse.Navigate(current);
         }
 
         private Rect DrawSearch(Rect rect)
@@ -431,7 +537,7 @@ namespace IrisMenus
             if (query.Length > 0 && Widgets.ButtonImage(new Rect(rect.xMax - 24f, rect.y + 3f, 24f, 24f),
                 TexButton.CloseXSmall, tooltip: "IM_ClearSearch".Translate())) query = "";
             string scope = browse.Managing ? "IM_Manage".Translate().ToString() : browse.Scope == null
-                ? "IM_SearchGlobal".Translate().ToString() : "IM_SearchMod".Translate(session.Selected?.Owner.Content.Name ?? "").ToString();
+                ? "IM_SearchGlobal".Translate().ToString() : "IM_SearchMod".Translate(session.Selected?.DisplayModName ?? "").ToString();
             TooltipHandler.TipRegion(field, scope);
             if (query.Length == 0 && GUI.GetNameOfFocusedControl() != "IrisMenus.Search")
             {

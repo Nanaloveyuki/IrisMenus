@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 using System;
 using UnityEngine;
 
@@ -18,6 +20,18 @@ namespace IrisMenus
             Selected = page;
             DrawFailed = false;
             return true;
+        }
+
+        internal void Rebind(MenuPage page)
+        {
+            Selected = page;
+            DrawFailed = false;
+        }
+
+
+        internal static MenuPage ResolveReplacement(MenuPage selected, IReadOnlyList<MenuPage> pages)
+        {
+            return MenuRegistry.ReplacementFor(selected, pages);
         }
 
         internal bool Save()

@@ -20,6 +20,27 @@ Markdown 动态内容和外部只读文件的接入方式见
 让 Harmony、IrisMenus 排在消费方之前。通常在 Mod 构造函数中、取得自己的设置对象后注册页面。
 注册和 UI 操作都在游戏主线程执行，不要在每次绘制时重复注册。
 
+### 按语言指定 Mod 名称
+
+名称别名从 1.1.1 起可用。用 RimWorld 的语言目录名（如 `English`、`ChineseSimplified`），不要用显示名称或 `en` / `zh-CN`：
+
+```csharp
+// 自己的名称：Mod 或 ModContentPack 均可。
+MenuRegistry.RegisterModNameAlias(this, "English", "Hunger and Havoc");
+MenuRegistry.RegisterModNameAlias(Content, "ChineseSimplified", "饥与祸");
+
+// 翻译 Mod 为另一个 Mod 指定名称，不需要拿到它的 Mod 实例。
+MenuRegistry.RegisterModNameAlias("author.targetmod", "English", "Hunger and Havoc");
+string name = MenuRegistry.GetModDisplayName(Content);
+```
+
+目标使用 `About.xml` 的 `packageId`，可以在目标创建实例之前注册。包 ID 和语言名不区分大小写；注册参数去掉首尾空白，空值会抛出参数异常。同一包、同一语言最后一次注册生效，其他语言的别名不受影响。
+
+只在当前语言有别名时替换 Mod 级名称；否则使用原名，不回退到其他语言。父级导航、单页 Mod 导航、托管页标题、名称提示和搜索路径统一使用别名；显式分类标题仍由页面回调控制。原名和当前别名均可搜索。
+
+`GetModDisplayName` 接受 `Mod` 或 `ModContentPack`。注册后已打开窗口会刷新，语言切换也会重建搜索目录。别名不修改 `Content.Name` / `About.xml`，不改变页面、托管勾选或记忆状态的 ID；注册仅在本次游戏进程中生效，不写入用户设置。名称 API 不会自动启用托管。
+
+
 ## 2. 普通页面与分类
 
 ```csharp
@@ -32,6 +53,17 @@ MenuRegistry.RegisterSubItemListing(this, "advanced", () => "高级", DrawAdvanc
 
 旧的 `RegisterListing` 仍可使用：只有一页时直接打开，多页时自动按 Mod 分组。
 `RegisterSubItemListing` 明确声明分类，即使只有一个分类也显示父级。仅选中的 Mod 展开，并记住它上次打开的页面。
+
+动态分类不要反复调用 `RegisterSubItemListing`。用同一个 `registrationId` 整体替换：
+
+```csharp
+MenuRegistry.ReplaceSubItemListings(this, "generated", new[]
+{
+    new MenuSubItemListing("rules", () => "规则", DrawRules)
+});
+```
+
+`registrationId` 只标识这一组动态页，不显示在导航中。新列表会原子替换该组：相同页面 ID 保留页面和滚动位置，并更新标题、绘制、保存和搜索回调；省略的页面会被移除。空列表只移除这一组。替换前会检查空值、重复 ID，以及与本组之外已注册页面的冲突，失败时不改变现有注册。保存回调省略时仍默认 `owner.WriteSettings`。窗口已打开时，当前页 ID 不变则继续停留；当前页被移除后优先选择同注册组中最接近原位置的页面，再回退到同 Mod 的可用页面或全局目录，不再绘制旧页。
 
 ```csharp
 private void DrawGeneral(Listing_Standard list)
@@ -95,6 +127,7 @@ MenuRegistry.RegisterSearchProvider(this, "details", () => new[]
 
 用户可以在添加设置页面中手动选择原版 Mod；普通适配页直接调用它的 `DoSettingsWindowContents(Rect)`，不再套一层滚动。
 没有额外元数据时只能按 Mod/页面名称搜索并打开整页，无法自动识别控件。
+添加列表同时显示内容包的 ModIcon（32×32 等比缩放），没有自定义图标时使用游戏提供的默认图标。长名称按扣除图标与勾选框后的宽度换行。
 `RegisterAdapterSearch(owner, provider, focus)` 可以补充元数据和自定义定位，但不会自动启用托管，也不会自动拆分分类。
 需要独立分类时，应显式注册多个页面。
 
@@ -108,10 +141,25 @@ Character Editor（创意工坊 1874644848）的该方法实际是独立窗口�
 窗口底栏和原版 IrisMenus 设置页新增“记住上次页面”，默认开启：重开或重启后恢复页面、搜索范围与关键词、结果分页、添加页面的筛选、宿主滚动和注册 Listing 页的滚动位置。显式打开某个 Mod 时优先进入该 Mod；页面移除后退回同 Mod 的可用分类或全局目录。
 关闭记忆会清除宿主浏览记录，不影响 Mod 设置、托管勾选、窗口位置和大小。自定义页与适配页内部的折叠、输入和滚动仍由接入方维护。窗口背景、底色与边框同步上游 12 单位圆角，关闭毛玻璃或透明度归零时也保留圆角。
 
+## 6. 所属 Mod 操作
+
+操作不是设置页，也不保存设置。可挂在已有 `Mod` 上，也可挂在没有 `Mod` 句柄的 `ModContentPack` 上。同一内容包的两种注册属于同一组。
+
+```csharp
+MenuRegistry.RegisterOwnerAction(this, "reload", () => "重新加载", Reload,
+    visible: () => settings.Enabled, enabled: () => !busy, confirmation: () => "确认重新加载？");
+MenuRegistry.RegisterOwnerAction(content, "export", () => "导出", Export);
+```
+
+选中该内容包的任一页面时，窗口在页面上方绘制可换行的操作条。没有设置页的内容包会得到一个稳定的仅操作页，页面 ID 为内容包标识加 `:actions`；它不计入原生设置，也不阻止用户继续托管原版设置页。全局目录没有选中的 Mod，因此不显示操作条。
+
+`visible`、`enabled` 和 `confirmation` 都可省略。点击时重新检查可见和可用；确认文本非空时先用 `Dialog_MessageBox` 确认。回调异常只记录并提示，不关闭窗口，也不结束调用方自己的会话。同一所有者和操作 ID 再次注册会替换旧回调，不要每帧注册。
+
+
 完整、参与编译验证的示例位于仓库 `tests/ApiConsumer/ExampleMod.cs`。
 引擎替身测试和编译不能替代游戏实测：接入后需检查切页、定位、长翻译、窗口缩放、保存与重启。
 
-## 6. WSL 构建与部署
+## 7. WSL 构建与部署
 
 ```bash
 ./scripts/deploy.sh
