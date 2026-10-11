@@ -7,22 +7,33 @@ namespace IrisMenus
         internal Rect Navigation;
         internal Rect Content;
         internal Rect Footer;
+        internal Rect MainButton;
         internal bool Compact;
 
-        internal static MenuLayout Calculate(float width, float height)
+        internal static MenuLayout Calculate(float width, float height, float mainButtonLabelWidth)
         {
             const float top = 58f;
-            float footerHeight = width < 560f ? 152f : 120f;
-            float bodyHeight = Mathf.Max(1f, height - top - footerHeight - 12f);
             float leftWidth = Mathf.Clamp((width - 62f) * 0.2f, 170f, 340f);
             bool compact = width < 560f;
+            float controlX = compact ? 0f : leftWidth + 28f;
+            float buttonWidth = Mathf.Min(164f, (width - controlX - 32f) / 2f);
+            float mainButtonX = controlX + buttonWidth + 18f + 238f;
+            float mainButtonWidth = Mathf.Min(420f, width - mainButtonX - 24f);
+            bool inlineMainButton = !compact && mainButtonWidth >= mainButtonLabelWidth + 32f;
+            float footerHeight = compact ? 152f : inlineMainButton ? 72f : 120f;
+            float footerY = height - footerHeight;
+            float bodyHeight = Mathf.Max(1f, height - top - footerHeight - 12f);
             return new MenuLayout
             {
                 Compact = compact,
                 Navigation = new Rect(0f, top, compact ? width : leftWidth, bodyHeight),
                 Content = new Rect(compact ? 0f : leftWidth + 28f, top,
                     compact ? width : Mathf.Max(1f, width - leftWidth - 28f), bodyHeight),
-                Footer = new Rect(0f, height - footerHeight, width, footerHeight)
+                Footer = new Rect(0f, footerY, width, footerHeight),
+                MainButton = inlineMainButton
+                    ? new Rect(mainButtonX, footerY + 14f, mainButtonWidth, 24f)
+                    : new Rect(controlX, footerY + (compact ? 100f : 68f),
+                        Mathf.Min(420f, Mathf.Max(1f, width - controlX - 8f)), 44f)
             };
         }
 

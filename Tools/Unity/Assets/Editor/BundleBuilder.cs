@@ -179,12 +179,15 @@ public static class BundleBuilder
     {
         foreach (float width in new[] { 360f, 540f, 620f, 960f, 1920f, 3840f })
         foreach (float height in new[] { 440f, 540f, 720f, 1080f, 2160f })
+        foreach (float labelWidth in new[] { 180f, 320f, 460f })
         {
             Rect rect = MenuLayout.Clamp(new Rect(-500f, 9000f, width * 2f, height * 2f), width, height);
             Require(rect.x >= 0f && rect.y >= 0f && rect.xMax <= width && rect.yMax <= height, "Window containment");
-            MenuLayout layout = MenuLayout.Calculate(rect.width - 36f, rect.height - 36f);
+            MenuLayout layout = MenuLayout.Calculate(rect.width - 36f, rect.height - 36f, labelWidth);
             Require(layout.Content.width > 0f && layout.Content.height > 0f, "Positive content size");
             Require(layout.Content.yMax <= layout.Footer.y, "Content/footer separation");
+            Require(layout.MainButton.y >= layout.Footer.y && layout.MainButton.yMax <= layout.Footer.yMax,
+                "Visibility toggle contained in footer");
             if (!layout.Compact) Require(layout.Navigation.xMax < layout.Content.x, "Column separation");
         }
         Rect invalid = MenuLayout.Clamp(new Rect(float.NaN, float.PositiveInfinity, float.NaN, float.NegativeInfinity), 1920, 1080);

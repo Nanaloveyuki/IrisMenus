@@ -182,6 +182,12 @@ unaffected.
 - Add a default-on, persistent bottom-bar IrisMenus button visibility setting
   shared by the original Mod settings dialog and the IrisMenus window footer;
   changes apply and save immediately, and the settings-page launcher remains available.
+- Place the bottom-bar button visibility toggle to the right of the appearance
+  controls, aligned with the frosted-background toggle; keep a separate lower
+  row when the window or translated label cannot fit.
+- Reduce the footer from 120 to 72 UI units when its controls fit on two rows,
+  returning 48 units to settings and navigation; narrow windows and long
+  translations retain the space required for wrapped controls.
 - Fix the startup `MenuActionOwner` constructor error by storing action-only
   launcher content directly instead of creating an automatically discovered Mod subclass.
 - Add black-on-white line-art Preview and ModIcon PNGs. Regenerate with

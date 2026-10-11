@@ -207,7 +207,8 @@ namespace IrisMenus
                 Widgets.DrawLineHorizontal(0f, 52f, inRect.width);
                 GUI.color = Color.white;
                 Text.Font = GameFont.Small;
-                MenuLayout layout = MenuLayout.Calculate(inRect.width, inRect.height);
+                string mainButtonLabel = "IM_ShowMainButton".Translate();
+                MenuLayout layout = MenuLayout.Calculate(inRect.width, inRect.height, Text.CalcSize(mainButtonLabel).x);
                 Rect body = DrawSearch(layout.Content);
                 Rect navRect = layout.Navigation;
                 if (layout.Compact) navRect.yMin += 40f;
@@ -224,12 +225,12 @@ namespace IrisMenus
                     else if (browse.ShowResults) DrawResults(body);
                     else if (session.Selected != null) DrawSelected(body);
                 }
-                DrawFooter(layout);
+                DrawFooter(layout, mainButtonLabel);
             }
             finally { state.Restore(); }
         }
 
-        private void DrawFooter(MenuLayout layout)
+        private void DrawFooter(MenuLayout layout, string mainButtonLabel)
         {
             Rect footer = layout.Footer;
             GUI.color = new Color(1f, 0.85f, 0.55f, 0.18f);
@@ -261,9 +262,8 @@ namespace IrisMenus
                 if (!remembering) Settings.ClearRememberedView();
             }
             bool showingButton = Settings.ShowMainButton;
-            Rect mainButton = new Rect(controlX, footer.y + (layout.Compact ? 100f : 68f),
-                Mathf.Min(420f, Mathf.Max(1f, footer.width - controlX - 8f)), 44f);
-            Widgets.CheckboxLabeled(mainButton, "IM_ShowMainButton".Translate(), ref showingButton);
+            Rect mainButton = layout.MainButton;
+            Widgets.CheckboxLabeled(mainButton, mainButtonLabel, ref showingButton);
             TooltipHandler.TipRegion(mainButton, "IM_ShowMainButtonTip".Translate());
             if (showingButton != Settings.ShowMainButton)
             {
