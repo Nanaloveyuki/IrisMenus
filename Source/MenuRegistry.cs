@@ -204,7 +204,7 @@ namespace IrisMenus
             }
 
             foreach (MenuPage page in pages)
-                if (ReferenceEquals(page.Owner, selected.Owner)) return page;
+                if (ReferenceEquals(page.Owner, selected.Owner) && ReferenceEquals(page.Content, selected.Content)) return page;
             return null;
         }
 
@@ -236,23 +236,22 @@ namespace IrisMenus
 
         public static void InvalidateSearchIndex() { Revision++; }
         internal static bool HasContentPages(ModContentPack content) =>
-            registered.Any(page => !page.ActionLauncher && ReferenceEquals(page.Owner?.Content, content));
+            registered.Any(page => !page.ActionLauncher && ReferenceEquals(page.Content, content));
 
         internal static void RegisterLauncher(ModContentPack content, string id)
         {
             if (content == null) return;
-            MenuPage launcher = registered.FirstOrDefault(page => page.ActionLauncher && ReferenceEquals(page.Owner?.Content, content));
+            MenuPage launcher = registered.FirstOrDefault(page => page.ActionLauncher && ReferenceEquals(page.Content, content));
             Mod owner = null;
             foreach (Mod mod in LoadedModManager.ModHandles)
                 if (ReferenceEquals(mod.Content, content)) { owner = mod; break; }
             if (launcher != null)
             {
-                if (owner != null && launcher.Owner is MenuActionOwner) launcher.Owner = owner;
+                if (launcher.Owner == null) launcher.Owner = owner;
                 return;
             }
-            if (registered.Any(page => ReferenceEquals(page.Owner?.Content, content))) return;
-            owner = owner ?? new MenuActionOwner(content);
-            registered.Add(new MenuPage(id, owner, () => GetModDisplayName(content), _ => { }, () => { }, false) { ActionLauncher = true });
+            if (registered.Any(page => ReferenceEquals(page.Content, content))) return;
+            registered.Add(new MenuPage(id, content, owner));
             Revision++;
         }
 
@@ -260,10 +259,10 @@ namespace IrisMenus
         {
             foreach (MenuPage page in registered)
             {
-                if (!page.ActionLauncher || !(page.Owner is MenuActionOwner)) continue;
+                if (!page.ActionLauncher || page.Owner != null) continue;
                 foreach (Mod mod in LoadedModManager.ModHandles)
                 {
-                    if (!ReferenceEquals(mod.Content, page.Owner.Content)) continue;
+                    if (!ReferenceEquals(mod.Content, page.Content)) continue;
                     page.Owner = mod;
                     break;
                 }
@@ -299,9 +298,7 @@ namespace IrisMenus
             internal Action<string> Focus;
         }
 
-        internal static string OwnerId(Mod mod) => mod is MenuActionOwner action
-            ? MenuOwnerActions.ContentOwnerId(action.Content)
-            : mod.Content.PackageIdPlayerFacing + ":" + mod.GetType().FullName;
+        internal static string OwnerId(Mod mod) => mod.Content.PackageIdPlayerFacing + ":" + mod.GetType().FullName;
         internal static bool HasPages(Mod mod) => registered.Any(page => !page.ActionLauncher && ReferenceEquals(page.Owner, mod));
         internal static IEnumerable<MenuPage> Registered => registered;
 
@@ -342,6 +339,8 @@ namespace IrisMenus
     {
         internal readonly string Id;
         internal Mod Owner;
+        internal readonly ModContentPack Content;
+        internal string OwnerId => Owner == null ? MenuOwnerActions.ContentOwnerId(Content) : MenuRegistry.OwnerId(Owner);
         internal Func<string> Title;
         internal Action<Rect> Draw;
         internal Action Save;
@@ -353,7 +352,7 @@ namespace IrisMenus
         internal Func<IEnumerable<MenuSearchEntry>> SearchProvider;
         internal Action<string> Focus;
         internal MenuScrollView ListingScroll;
-        internal string DisplayModName => MenuRegistry.GetModDisplayName(Owner);
+        internal string DisplayModName => MenuRegistry.GetModDisplayName(Content);
         private bool titleFailed;
 
         internal string DisplayTitle
@@ -362,9 +361,9 @@ namespace IrisMenus
             {
                 try
                 {
-                    if (Adapted && MenuRegistry.TryGetModNameAlias(Owner.Content, out string alias)) return alias;
+                    if (Adapted && MenuRegistry.TryGetModNameAlias(Content, out string alias)) return alias;
                     string title = Title();
-                    return string.IsNullOrWhiteSpace(title) || title == Owner.Content.Name ? DisplayModName : title;
+                    return string.IsNullOrWhiteSpace(title) || title == Content.Name ? DisplayModName : title;
                 }
                 catch (Exception exception)
                 {
@@ -379,10 +378,18 @@ namespace IrisMenus
         {
             Id = id;
             Owner = owner;
+            Content = owner?.Content;
             Title = title;
             Draw = draw;
             Save = save;
             Adapted = adapted;
+        }
+
+        internal MenuPage(string id, ModContentPack content, Mod owner)
+            : this(id, owner, () => MenuRegistry.GetModDisplayName(content), _ => { }, () => { }, false)
+        {
+            Content = content;
+            ActionLauncher = true;
         }
     }
 
@@ -407,12 +414,5 @@ namespace IrisMenus
         }
     }
 
-    internal sealed class MenuActionOwner : Mod
-    {
-        internal MenuActionOwner(ModContentPack content) : base(content) { }
-        public override string SettingsCategory() => null;
-        public override void DoSettingsWindowContents(Rect inRect) { }
-        public override void WriteSettings() { }
-    }
 
 }

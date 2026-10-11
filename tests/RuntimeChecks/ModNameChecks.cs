@@ -36,7 +36,7 @@ internal static class ModNameChecks
             check(adapter.DisplayTitle == "Hunger and Havoc" && namedPage.DisplayTitle == "Hunger and Havoc" &&
                 fallback.DisplayTitle == "Hunger and Havoc" && broken.DisplayTitle == "Hunger and Havoc",
                 "Aliases reach adapters, name-based pages and fallback titles");
-            var rows = MenuNavigation.Build(new[] { category }, owner, new Dictionary<string, string>());
+            var rows = MenuNavigation.Build(new[] { category }, pack, new Dictionary<string, string>());
             check(rows[0].Title == "Hunger and Havoc" && rows[1].Title == "Overview" && category.DisplayTitle == "Overview",
                 "Parent name is localized without replacing explicit category titles");
             check(MenuNavigation.Build(new[] { namedPage }, null, new Dictionary<string, string>()).Single().Title == "Hunger and Havoc",
@@ -54,7 +54,7 @@ internal static class ModNameChecks
             var actionPack = new ModContentPack { PackageIdPlayerFacing = "names.actions", Name = "Actions" };
             MenuRegistry.RegisterModNameAlias(actionPack, "ChineseSimplified", "操作 Mod");
             MenuRegistry.RegisterOwnerAction(actionPack, "open", () => "Open", () => { });
-            MenuPage launcher = MenuRegistry.Registered.Single(page => ReferenceEquals(page.Owner.Content, actionPack));
+            MenuPage launcher = MenuRegistry.Registered.Single(page => ReferenceEquals(page.Content, actionPack));
             check(launcher.DisplayTitle == "操作 Mod", "Action-only Mod launchers use localized names");
 
             Throws<ArgumentNullException>(() => MenuRegistry.RegisterModNameAlias((Mod)null, "English", "Alias"), check);

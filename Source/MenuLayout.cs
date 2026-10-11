@@ -12,7 +12,7 @@ namespace IrisMenus
         internal static MenuLayout Calculate(float width, float height)
         {
             const float top = 58f;
-            float footerHeight = width < 560f ? 128f : 88f;
+            float footerHeight = width < 560f ? 152f : 120f;
             float bodyHeight = Mathf.Max(1f, height - top - footerHeight - 12f);
             float leftWidth = Mathf.Clamp((width - 62f) * 0.2f, 170f, 340f);
             bool compact = width < 560f;

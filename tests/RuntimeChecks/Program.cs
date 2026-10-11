@@ -10,6 +10,7 @@ internal static class Program
     private static void Main()
     {
         Registry();
+        LoaderConstruction();
         Session();
         Scrolling();
         BackgroundLifecycle();
@@ -63,6 +64,17 @@ internal static class Program
         MenuRegistry.Register(customOwner, "custom", () => "Custom", _ => { }, () => saves++);
         MenuRegistry.Registered.Last().Save();
         Check(saves == 1 && customOwner.Saves == 0, "Custom save replaces default");
+    }
+
+    private static void LoaderConstruction()
+    {
+        var content = new ModContentPack { PackageIdPlayerFacing = "loader.iris", Name = "Loader" };
+        foreach (Type type in typeof(MenuRegistry).Assembly.GetTypes())
+        {
+            if (type.Namespace != typeof(MenuRegistry).Namespace || !type.IsSubclassOf(typeof(Mod)) || type.IsAbstract) continue;
+            var instance = (Mod)Activator.CreateInstance(type, content);
+            Check(ReferenceEquals(instance.Content, content), "Game loader constructs " + type.FullName + " with its content pack");
+        }
     }
 
     private static void Session()

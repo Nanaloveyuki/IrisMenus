@@ -180,7 +180,10 @@ unaffected.
 ### Unreleased
 
 - Add a default-on, persistent bottom-bar IrisMenus button visibility setting
-  in the original Mod settings dialog; keep the settings-page launcher available.
+  shared by the original Mod settings dialog and the IrisMenus window footer;
+  changes apply and save immediately, and the settings-page launcher remains available.
+- Fix the startup `MenuActionOwner` constructor error by storing action-only
+  launcher content directly instead of creating an automatically discovered Mod subclass.
 
 ### 1.1.1
 

@@ -22,7 +22,7 @@ namespace IrisMenus
             string modName = page.DisplayModName;
             Path = modName + " / " + page.DisplayTitle;
             Text = Title + " " + Context + " " + keywords + " " + Path;
-            if (modName != page.Owner.Content.Name) Text += " " + page.Owner.Content.Name;
+            if (modName != page.Content.Name) Text += " " + page.Content.Name;
         }
     }
 
@@ -91,7 +91,7 @@ namespace IrisMenus
             for (int i = 0; i < budget && matchCursor < records.Count; i++)
             {
                 MenuSearchHit hit = records[matchCursor++];
-                if (scope != null && MenuRegistry.OwnerId(hit.Page.Owner) != scope) continue;
+                if (scope != null && hit.Page.OwnerId != scope) continue;
                 bool matches = true;
                 foreach (string term in terms)
                     if (hit.Text.IndexOf(term, StringComparison.CurrentCultureIgnoreCase) < 0) { matches = false; break; }

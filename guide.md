@@ -154,6 +154,10 @@ MenuRegistry.RegisterOwnerAction(content, "export", () => "导出", Export);
 
 选中该内容包的任一页面时，窗口在页面上方绘制可换行的操作条。没有设置页的内容包会得到一个稳定的仅操作页，页面 ID 为内容包标识加 `:actions`；它不计入原生设置，也不阻止用户继续托管原版设置页。全局目录没有选中的 Mod，因此不显示操作条。
 
+仅操作页直接持有 `ModContentPack`，不会创建额外的 `Mod` 子类或加入游戏的 Mod 句柄列表；该内容包之后出现真实 Mod 句柄时仍会接管并保持同组。
+
+IrisMenus 窗口底栏和原版 IrisMenus 设置页都提供“显示底部 IrisMenus 按钮”开关，使用同一份设置，切换后立即生效并保存。隐藏后仍可从“选项 → Mod 设置 → IrisMenus → 打开 IrisMenus”进入。
+
 `visible`、`enabled` 和 `confirmation` 都可省略。点击时重新检查可见和可用；确认文本非空时先用 `Dialog_MessageBox` 确认。回调异常只记录并提示，不关闭窗口，也不结束调用方自己的会话。同一所有者和操作 ID 再次注册会替换旧回调，不要每帧注册。
 
 

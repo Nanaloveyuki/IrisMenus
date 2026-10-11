@@ -31,7 +31,7 @@ namespace IrisMenus
 
         internal static List<MenuOwnerAction> For(MenuPage page)
         {
-            ModContentPack content = page?.Owner?.Content;
+            ModContentPack content = page?.Content;
             if (content == null) return none;
             return byContent.TryGetValue(content, out List<MenuOwnerAction> actions) ? actions : none;
         }

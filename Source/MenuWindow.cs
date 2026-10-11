@@ -118,7 +118,7 @@ namespace IrisMenus
             if (!explicitRequest && view.Count > 0)
             {
                 view.TryGetValue("scope", out string scope);
-                bool scopeAvailable = scope == null || pages.Any(page => MenuRegistry.OwnerId(page.Owner) == scope);
+                bool scopeAvailable = scope == null || pages.Any(page => page.OwnerId == scope);
                 MenuPage target = view.TryGetValue("target", out string targetId)
                     ? pages.FirstOrDefault(page => page.Id == targetId) : null;
                 if (target == null && view.TryGetValue("mode", out string mode) && mode == "target")
@@ -147,7 +147,7 @@ namespace IrisMenus
         {
             if (lastPage == null) return null;
             foreach (MenuPage page in pages)
-                if (lastPage.StartsWith(MenuRegistry.OwnerId(page.Owner) + ":", StringComparison.Ordinal)) return page;
+                if (lastPage.StartsWith(page.OwnerId + ":", StringComparison.Ordinal)) return page;
             return null;
         }
 
@@ -260,6 +260,16 @@ namespace IrisMenus
                 Settings.RememberState = remembering;
                 if (!remembering) Settings.ClearRememberedView();
             }
+            bool showingButton = Settings.ShowMainButton;
+            Rect mainButton = new Rect(controlX, footer.y + (layout.Compact ? 100f : 68f),
+                Mathf.Min(420f, Mathf.Max(1f, footer.width - controlX - 8f)), 44f);
+            Widgets.CheckboxLabeled(mainButton, "IM_ShowMainButton".Translate(), ref showingButton);
+            TooltipHandler.TipRegion(mainButton, "IM_ShowMainButtonTip".Translate());
+            if (showingButton != Settings.ShowMainButton)
+            {
+                Settings.ShowMainButton = showingButton;
+                SaveWindowSettings();
+            }
             float sliderWidth = layout.Compact ? footer.width / 2f - 16f : Mathf.Max(120f, layout.Navigation.width - 20f);
             GUI.enabled = Settings.FrostEnabled;
             Settings.Blur = FooterSlider(new Rect(10f, footer.y + 4f, sliderWidth, 28f), "IM_Blur", Settings.Blur);
@@ -326,7 +336,7 @@ namespace IrisMenus
             var filtered = adapters.Where(page => !MenuRegistry.HasPages(page.Owner) &&
                 (page.DisplayTitle.IndexOf(browse.Query, StringComparison.CurrentCultureIgnoreCase) >= 0 ||
                  page.DisplayModName.IndexOf(browse.Query, StringComparison.CurrentCultureIgnoreCase) >= 0 ||
-                 page.Owner.Content.Name.IndexOf(browse.Query, StringComparison.CurrentCultureIgnoreCase) >= 0)).ToList();
+                 page.Content.Name.IndexOf(browse.Query, StringComparison.CurrentCultureIgnoreCase) >= 0)).ToList();
             Rect viewport = rect;
             float width = viewport.width - 20f;
             float height = filtered.Sum(page => RowHeight(page, width - 68f));
@@ -347,7 +357,7 @@ namespace IrisMenus
                     Rect row = new Rect(0f, y, width, rowHeight);
                     if (row.Overlaps(new Rect(0f, adapterScroll.y, width, viewport.height)))
                     {
-                        Texture2D icon = page.Owner.Content.ModMetaData?.Icon;
+                        Texture2D icon = page.Content.ModMetaData?.Icon;
                         if (icon != null) GUI.DrawTexture(new Rect(0f, y + (rowHeight - 32f) / 2f, 32f, 32f), icon, ScaleMode.ScaleToFit);
                     }
                     Rect checkbox = new Rect(40f, y, Mathf.Max(1f, width - 40f), rowHeight);
@@ -480,14 +490,14 @@ namespace IrisMenus
 
         private void RememberPage(MenuPage page)
         {
-            if (page != null && Settings.RememberState) Settings.LastSubItems[MenuRegistry.OwnerId(page.Owner)] = page.Id;
+            if (page != null && Settings.RememberState) Settings.LastSubItems[page.OwnerId] = page.Id;
             RebuildNavigation();
         }
 
         private void RebuildNavigation()
         {
-            Mod owner = browse.Global && !browse.ViewingTarget || browse.Managing ? null : session.Selected?.Owner;
-            navigation = MenuNavigation.Build(pages, owner, Settings.LastSubItems);
+            ModContentPack content = browse.Global && !browse.ViewingTarget || browse.Managing ? null : session.Selected?.Content;
+            navigation = MenuNavigation.Build(pages, content, Settings.LastSubItems);
         }
 
         private void RefreshCatalog()

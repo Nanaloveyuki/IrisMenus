@@ -14,7 +14,7 @@ namespace IrisMenus
 
         internal void Navigate(MenuPage page)
         {
-            Scope = page == null ? null : MenuRegistry.OwnerId(page.Owner);
+            Scope = page?.OwnerId;
             Query = "";
             Managing = ViewingTarget = false;
             ResultPage = 0;

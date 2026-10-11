@@ -16,9 +16,9 @@ internal static class CatalogChecks
         MenuRegistry.Register(owner, "legacy-two", () => "Legacy 2", _ => draws++);
         var legacy = MenuRegistry.Registered.Where(p => ReferenceEquals(p.Owner, owner)).ToList();
         var remembered = new Dictionary<string, string>();
-        var rows = MenuNavigation.Build(legacy, owner, remembered);
+        var rows = MenuNavigation.Build(legacy, owner.Content, remembered);
         check(rows.Count == 3 && rows[0].OwnerHeader && rows.Skip(1).All(r => r.Child), "Multiple legacy pages group without changing registration API");
-        check(MenuNavigation.Build(new[] { legacy[0] }, owner, remembered).Single().OwnerHeader == false, "Single legacy page opens directly");
+        check(MenuNavigation.Build(new[] { legacy[0] }, owner.Content, remembered).Single().OwnerHeader == false, "Single legacy page opens directly");
         remembered[MenuRegistry.OwnerId(owner)] = legacy[1].Id;
         check(MenuNavigation.Build(legacy, null, remembered).Single().Page == legacy[1], "Legacy group remembers selected category");
         IrisMenusMod.Instance.Settings.LastSubItems[MenuRegistry.OwnerId(owner)] = legacy[1].Id;
@@ -31,7 +31,7 @@ internal static class CatalogChecks
         MenuPage advanced = pages.First(p => p.Id.EndsWith(":advanced"));
         rows = MenuNavigation.Build(pages, null, remembered);
         check(rows.Count == 2 && rows.All(r => r.OwnerHeader), "Explicit categories collapse initially");
-        rows = MenuNavigation.Build(pages, owner, remembered);
+        rows = MenuNavigation.Build(pages, owner.Content, remembered);
         check(rows.Count(r => r.Child) == 2 && rows.Where(r => r.Child).All(r => ReferenceEquals(r.Page.Owner, owner)), "Only selected owner's children expand");
         remembered[MenuRegistry.OwnerId(owner)] = advanced.Id;
         check(MenuNavigation.Build(pages, null, remembered).First().Page == advanced, "Owner restores last category");
@@ -202,17 +202,25 @@ internal static class CatalogChecks
         var pack = new ModContentPack { PackageIdPlayerFacing = "actions.pack", Name = "Actions", RootDir = "actions-root" };
         var settings = new Mod { Content = pack };
         MenuRegistry.RegisterOwnerAction(pack, "edit", () => "Edit", () => { });
-        MenuPage launcher = MenuRegistry.Registered.Single(page => page.ActionLauncher && ReferenceEquals(page.Owner.Content, pack));
+        MenuPage launcher = MenuRegistry.Registered.Single(page => page.ActionLauncher && ReferenceEquals(page.Content, pack));
         check(launcher.Id == MenuOwnerActions.ContentOwnerId(pack) + ":actions", "Content-only pack gets a stable action launcher");
+        var browse = new MenuBrowseState();
+        browse.Navigate(launcher);
+        var captured = new Dictionary<string, string>();
+        browse.Capture(captured, launcher);
+        var restored = new MenuBrowseState();
+        restored.Restore(captured, launcher, true);
+        check(restored.Scope == MenuOwnerActions.ContentOwnerId(pack) && !restored.Global && !restored.ShowResults,
+            "Content-only launcher reopens as its own page, not the global catalog");
         check(!MenuRegistry.HasPages(settings), "Action launcher does not count as native settings");
         LoadedModManager.ModHandles.Add(settings);
         check(MenuRegistry.Adaptable().Any(page => ReferenceEquals(page.Owner, settings)), "Settings adapter stays available beside an action launcher");
         MenuRegistry.AdoptActionOwners();
         check(ReferenceEquals(launcher.Owner, settings), "Launcher adopts the real mod handle for the same content pack");
         MenuRegistry.Register(settings, "general", () => "General", _ => { });
-        var owned = MenuRegistry.Registered.Where(page => ReferenceEquals(page.Owner.Content, pack)).ToList();
+        var owned = MenuRegistry.Registered.Where(page => ReferenceEquals(page.Content, pack)).ToList();
         check(owned.Count(page => page.ActionLauncher) == 1 && MenuRegistry.HasPages(settings), "Settings registration keeps the existing launcher");
-        var rows = MenuNavigation.Build(owned, settings, new Dictionary<string, string>());
+        var rows = MenuNavigation.Build(owned, pack, new Dictionary<string, string>());
         check(rows.Any(row => row.OwnerHeader) && rows.Count(row => row.Child && !row.Page.ActionLauncher) == 1 && rows.All(row => !row.ActionOnly), "Settings and actions share one group without listing the launcher as a settings page");
         MenuOwnerAction edit = MenuOwnerActions.For(launcher).Single(action => action.Id == "edit");
         using (var catalog = new MenuCatalog(owned))
@@ -225,9 +233,29 @@ internal static class CatalogChecks
         check(!ReferenceEquals(replaced, edit) && MenuOwnerActions.For(launcher).Count(action => action.Id == "edit") == 1, "Same action id replaces the previous registration");
         var only = new ModContentPack { PackageIdPlayerFacing = "actions.only", Name = "Only", RootDir = "only-root" };
         MenuRegistry.RegisterOwnerAction(only, "open", () => "Open", () => { });
-        MenuPage onlyPage = MenuRegistry.Registered.Single(page => ReferenceEquals(page.Owner.Content, only));
+        MenuPage onlyPage = MenuRegistry.Registered.Single(page => ReferenceEquals(page.Content, only));
         var onlyRows = MenuNavigation.Build(new[] { onlyPage }, null, new Dictionary<string, string>());
         check(onlyRows.Count == 1 && onlyRows[0].ActionOnly && onlyRows[0].OwnerHeader, "Action-only content keeps one non-settings header");
+        var session = new MenuSession((operation, exception) => throw new Exception(operation, exception));
+        session.Select(onlyPage);
+        int executions = 0;
+        MenuRegistry.RegisterOwnerAction(only, "run", () => "Run", () => executions++);
+        MenuOwnerActions.For(session.Selected).Single(action => action.Id == "run").Execute();
+        session.Draw(default);
+        session.Select(null);
+        check(executions == 1 && !session.DrawFailed && session.Selected == null,
+            "Content-only launcher supports execution, drawing and leaving the page");
+        check(MenuSession.ResolveReplacement(onlyPage, new[] { launcher }) == null,
+            "Removed content-only launcher never selects an unrelated ownerless page");
+        MenuRegistry.RegisterSubItem(settings, "advanced", () => "Advanced", _ => { });
+        owned = MenuRegistry.Registered.Where(page => ReferenceEquals(page.Content, pack)).ToList();
+        MenuPage advanced = owned.Single(page => page.Id.EndsWith(":advanced"));
+        var remembered = new Dictionary<string, string> { [MenuRegistry.OwnerId(settings)] = advanced.Id };
+        rows = MenuNavigation.Build(owned, pack, remembered);
+        check(rows[0].Page == advanced && rows.Count(row => row.Child) == 2,
+            "Adopted action launcher preserves remembered settings and content-group expansion");
+        rows = MenuNavigation.Build(owned.Concat(new[] { onlyPage }).ToList(), only, remembered);
+        check(rows.All(row => !row.Child), "Selecting content-only actions does not expand another Mod's settings");
     }
 
 
