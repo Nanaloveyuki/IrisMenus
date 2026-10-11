@@ -184,6 +184,8 @@ unaffected.
   changes apply and save immediately, and the settings-page launcher remains available.
 - Fix the startup `MenuActionOwner` constructor error by storing action-only
   launcher content directly instead of creating an automatically discovered Mod subclass.
+- Add black-on-white line-art Preview and ModIcon PNGs. Regenerate with
+  `uv run --no-project --with pillow scripts/generate-about-images.py`.
 
 ### 1.1.1
 

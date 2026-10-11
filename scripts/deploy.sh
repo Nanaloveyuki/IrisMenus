@@ -62,6 +62,7 @@ package_id = "Nanaloveyuki.IrisMenus"
 folders = ("1.6/Defs", "1.6/Languages", "docs")
 files = (
     "About/About.xml", "README.md", "LICENSE", "guide.md", "guide_agents.md",
+    "About/Preview.png", "About/ModIcon.png",
     "1.6/Assemblies/IrisMenus.dll", "1.6/AssetBundles/irismenus_frost",
 )
 

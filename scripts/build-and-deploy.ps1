@@ -37,7 +37,7 @@ if (Test-Path -LiteralPath $target) {
     }
 }
 
-$files = @('About\About.xml', 'LICENSE', 'guide.md', 'guide_agents.md', '1.6\Assemblies\IrisMenus.dll', '1.6\AssetBundles\irismenus_frost')
+$files = @('About\About.xml', 'About\Preview.png', 'About\ModIcon.png', 'LICENSE', 'guide.md', 'guide_agents.md', '1.6\Assemblies\IrisMenus.dll', '1.6\AssetBundles\irismenus_frost')
 foreach ($directory in @('1.6\Defs', '1.6\Languages', 'docs')) {
     $files += Get-ChildItem -LiteralPath (Join-Path $repoRoot $directory) -Recurse -File |
         ForEach-Object { $_.FullName.Substring($repoRoot.Length + 1) }
